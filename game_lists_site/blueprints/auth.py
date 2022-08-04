@@ -1,34 +1,44 @@
 import functools
 
-from flask import (
-    Blueprint, flash, g, redirect, render_template, request, session, url_for
-)
+from flask import (Blueprint, current_app, flash, g, redirect, render_template,
+                   request, session, url_for)
+from requests import get
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from game_lists_site.db import get_db
+from game_lists_site.utils.steam_api import get_steam_id_from_profile_url
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 
-@bp.route('/register', methods=('GET', 'POST'))  # @bp.route associates the URL '/register' with register view function
+# @bp.route associates the URL '/register' with register view function
+@bp.route('/register', methods=('GET', 'POST'))
 def register():
     if request.method == 'POST':
-        username = request.form['username']  # request.form is a special type of dict mapping submitted form keys and values
+        username = request.form['username']
         password = request.form['password']
+        profile_url = request.form['profile_url']
+        steam_id = get_steam_id_from_profile_url(
+            profile_url) if profile_url else None
         db = get_db()
         error = None
-
         if not username:
             error = 'Username is required!'
         elif not password:
             error = 'Password is required!'
+        elif not profile_url:
+            error = 'Steam profile url is required!'
+        elif not steam_id:
+            error = 'Invalid steam profile url!'
 
         if error is None:
             try:
-                db.execute(
-                    'INSERT INTO user (username, password) VALUES (?, ?)',
-                    (username, generate_password_hash(password)),
-                )  # db.executes takes a SQL query with ? for any user input and a tuple of values to replace the placeholders with.
+                if steam_id:
+                    db.execute(
+                        'INSERT INTO user (username, password, steam_id) '
+                        'VALUES (?, ?, ?)',
+                        (username, generate_password_hash(password), steam_id),
+                    )
                 db.commit()
             except db.IntegrityError:
                 error = f"User {username} is already registered."
@@ -53,7 +63,8 @@ def login():
 
         if user is None:
             error = 'Incorrect username.'
-        elif not check_password_hash(user['password'], password):  # check_password_hash() hashes the submitted password in the same way as the stored and compares them
+        # check_password_hash() hashes the submitted password in the same way as the stored and compares them
+        elif not check_password_hash(user['password'], password):
             error = 'Incorrect password.'
 
         if error is None:
@@ -66,7 +77,8 @@ def login():
     return render_template('auth/login.html')
 
 
-@bp.before_app_request  # registers a function that runs before the view function, no matter what URL is requested
+# registers a function that runs before the view function, no matter what URL is requested
+@bp.before_app_request
 def load_logged_in_user():
     user_id = session.get('user_id')
 
@@ -84,11 +96,13 @@ def logout():
     return redirect(url_for('index'))
 
 
-def login_required(view):  # This function checks if a user is loaded and redirects to the login page otherwise
+# This function checks if a user is loaded and redirects to the login page otherwise
+def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if g.user is None:
-            return redirect(url_for('auth.login'))  # url_for() function generates teh URL to a view based on a name and arguments
+            # url_for() function generates teh URL to a view based on a name and arguments
+            return redirect(url_for('auth.login'))
 
         return view(**kwargs)
 

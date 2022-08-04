@@ -3,7 +3,7 @@ from flask import (
 )
 from werkzeug.exceptions import abort
 
-from game_lists_site.auth import login_required
+from game_lists_site.blueprints.auth import login_required
 from game_lists_site.db import get_db
 
 bp = Blueprint('blog', __name__)
