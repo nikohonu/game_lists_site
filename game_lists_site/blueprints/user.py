@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template, current_app
+from flask import Blueprint, abort, render_template
 
+from game_lists_site.blueprints.steam import (get_player_dict,
+                                              get_player_games_dict)
 from game_lists_site.db import get_db
-from requests import get
 
 bp = Blueprint('user', __name__, url_prefix='/user')
 
@@ -13,13 +14,14 @@ def user(name: str):
         'SELECT steam_id FROM user WHERE username = ?',
         (name,)
     ).fetchone()
-    #steam_id = steam_id[0] if steam_id else None
-    #url = current_app.config['STEAM_SERVER'] + f'/get-player/{steam_id}'
-    #request = get(url)
-    #result = request.json()
-    #steam_url = result['profile_url']
-    #steam_name = result['name']
-    steam_id = 'Steam ID'
-    steam_url = 'Steam URL'
-    steam_name = 'Steam name'
-    return render_template('user/user.html', name=name, steam_id=steam_id, steam_url=steam_url, steam_name=steam_name)
+    if steam_id:
+        steam_id = steam_id[0]
+    else:
+        abort(404)
+    player = get_player_dict(steam_id)
+    games = get_player_games_dict(steam_id)
+    if player:
+        return render_template(
+            'user/user.html', name=name, player=player, games=games)
+    else:
+        return abort(404)

@@ -20,11 +20,9 @@ def create_app(test_config=None):
     )
 
     if test_config is None:
-        # Load the instance config, if it exists, when not testing
-        # app.config.from_pyfile() overrides the default configuration with values taken from the config.py
-        app.config.from_pyfile('config.py', silent=True)
+        # ./instance/config.py
+        app.config.from_pyfile('config.py')
     else:
-        # Load the test config if passed in
         app.config.from_mapping(test_config)
 
     try:

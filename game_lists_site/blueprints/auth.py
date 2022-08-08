@@ -1,25 +1,22 @@
 import functools
 
-from flask import (Blueprint, current_app, flash, g, redirect, render_template,
-                   request, session, url_for)
-from requests import get
+from flask import (Blueprint, flash, g, redirect, render_template, request,
+                   session, url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from game_lists_site.db import get_db
-from game_lists_site.utils.steam_api import get_steam_id_from_profile_url
+from game_lists_site.utils.steam_api import get_steam_id_from_url
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 
-# @bp.route associates the URL '/register' with register view function
 @bp.route('/register', methods=('GET', 'POST'))
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         profile_url = request.form['profile_url']
-        steam_id = get_steam_id_from_profile_url(
-            profile_url) if profile_url else None
+        steam_id = get_steam_id_from_url(profile_url) if profile_url else None
         db = get_db()
         error = None
         if not username:

@@ -8,6 +8,16 @@ CREATE TABLE user (
     steam_id INTEGER NOT NULL
 );
 
+CREATE TABLE player (
+	steam_id INTEGER PRIMARY KEY AUTOINCREMENT,
+	is_public INTEGER NOT NULL,
+	name TEXT NOT NULL,
+	url TEXT NOT NULL,
+	avatar_url TEXT NOT NULL,
+	time_created TIMESTAMP NOT NULL,
+	update_time TIMESTAMP NOT NULL,
+);
+
 CREATE TABLE post (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     author_id INTEGER NOT NULL,
