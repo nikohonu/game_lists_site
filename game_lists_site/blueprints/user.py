@@ -1,27 +1,27 @@
 from flask import Blueprint, abort, render_template
 
-from game_lists_site.blueprints.steam import (get_player_dict,
-                                              get_player_games_dict)
 from game_lists_site.db import get_db
+from game_lists_site.utils.steam import get_profile
 
 bp = Blueprint('user', __name__, url_prefix='/user')
 
 
-@bp.route('/<name>')
-def user(name: str):
+@bp.route('/<username>')
+def user(username: str):
     db = get_db()
-    steam_id = db.execute(
-        'SELECT steam_id FROM user WHERE username = ?',
-        (name,)
+    steam_profile_id = db.execute(
+        'SELECT steam_profile_id FROM user WHERE username = ?',
+        (username,)
     ).fetchone()
-    if steam_id:
-        steam_id = steam_id[0]
+    if steam_profile_id:
+        steam_profile_id = steam_profile_id[0]
     else:
         abort(404)
-    player = get_player_dict(steam_id)
-    games = get_player_games_dict(steam_id)
-    if player:
-        return render_template(
-            'user/user.html', name=name, player=player, games=games)
+    steam_profile = get_profile(steam_profile_id)
+    # games = get_profile(steam_profile_id)
+    games = []
+    if steam_profile:
+        return render_template('user/user.html', username=username,
+                               steam_profile=steam_profile, games=games)
     else:
         return abort(404)

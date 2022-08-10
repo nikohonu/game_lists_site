@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 
 {% block header %}
-    <h1>{% block title %}{{ name }} {% endblock %}</h1>
+    <h1>{% block title %}{{ username }} {% endblock %}</h1>
 {% endblock %}
 {% block content %}
     <h1 style='text-align:center'>Steam profile</h1>
     <div style='display: flex; align-items: center'>
-        <img src="{{player['avatar_url']}}" alt="Steam avatar">
+        <img src="{{steam_profile['avatar_url']}}" alt="Steam avatar">
         <div>
-            <a href="{{player['url']}}" style='display: block'><h1 style="display:inline">{{player['name']}}</h1></a>
-            <a href="{{player['url']}}">Steam ID: {{player['steam_id']}}</a>
+            <a href="{{steam_profile['url']}}" style='display: block'><h1 style="display:inline">{{steam_profile['name']}}</h1></a>
+            <a href="{{steam_profile['url']}}">Steam ID: {{steam_profile['id']}}</a>
         </div>
     </div>
     <h1 style='text-align:center'>Game list</h1>

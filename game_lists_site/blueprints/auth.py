@@ -5,7 +5,7 @@ from flask import (Blueprint, flash, g, redirect, render_template, request,
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from game_lists_site.db import get_db
-from game_lists_site.utils.steam_api import get_steam_id_from_url
+import game_lists_site.utils.steam as steam
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -15,27 +15,28 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        profile_url = request.form['profile_url']
-        steam_id = get_steam_id_from_url(profile_url) if profile_url else None
+        steam_profile_url = request.form['steam_profile_url']
+        steam_profile_id = steam.get_profile_id_from_url(
+            steam_profile_url) if steam_profile_url else None
         db = get_db()
         error = None
         if not username:
             error = 'Username is required!'
         elif not password:
             error = 'Password is required!'
-        elif not profile_url:
+        elif not steam_profile_url:
             error = 'Steam profile url is required!'
-        elif not steam_id:
+        elif not steam_profile_id:
             error = 'Invalid steam profile url!'
-
         if error is None:
             try:
-                if steam_id:
-                    db.execute(
-                        'INSERT INTO user (username, password, steam_id) '
-                        'VALUES (?, ?, ?)',
-                        (username, generate_password_hash(password), steam_id),
-                    )
+                db.execute('INSERT INTO steam_profile (id) VALUES (?)', (steam_profile_id,))
+                db.commit()
+                db.execute(
+                    'INSERT INTO user (username, password, steam_profile_id) '
+                    'VALUES (?, ?, ?)',
+                    (username, generate_password_hash(password), steam_profile_id),
+                )
                 db.commit()
             except db.IntegrityError:
                 error = f"User {username} is already registered."

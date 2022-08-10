@@ -1,4 +1,3 @@
-# Application Factory -> Instance of Flask application
 import os
 from pathlib import Path
 
