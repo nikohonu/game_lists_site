@@ -9,7 +9,8 @@ def get_db():
     if 'db' not in g:  # g is a special object that is unique for each request
         # sqlite3.connect() establishes a connection to the file pointed at by DATABASE configuration key
         g.db = sqlite3.connect(
-            current_app.config['DATABASE'],  # current_app is also a special object that points to the application handling the request
+            # current_app is also a special object that points to the application handling the request
+            current_app.config['DATABASE'],
             detect_types=sqlite3.PARSE_DECLTYPES
         )
         g.db.row_factory = sqlite3.Row  # tells the to return rows that behave like dicts
@@ -42,5 +43,7 @@ def init_db_command():
 
 
 def init_app(app):
-    app.teardown_appcontext(close_db)  # tells Flask to cal that function when cleaning up after returning the response
-    app.cli.add_command(init_db_command)  # adds a new command that can be called with the flask command
+    # tells Flask to cal that function when cleaning up after returning the response
+    app.teardown_appcontext(close_db)
+    # adds a new command that can be called with the flask command
+    app.cli.add_command(init_db_command)

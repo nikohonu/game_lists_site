@@ -32,6 +32,9 @@ def create_app(test_config=None):
     import game_lists_site.db as db
     db.init_app(app)
 
+
+    import game_lists_site.models as models
+
     import game_lists_site.blueprints.auth as auth
     app.register_blueprint(auth.bp)
 

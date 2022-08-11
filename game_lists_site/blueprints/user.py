@@ -1,7 +1,7 @@
 from flask import Blueprint, abort, render_template
 
 from game_lists_site.db import get_db
-from game_lists_site.utils.steam import get_profile
+from game_lists_site.utils.steam import get_profile, get_profile_apps
 
 bp = Blueprint('user', __name__, url_prefix='/user')
 
@@ -18,10 +18,10 @@ def user(username: str):
     else:
         abort(404)
     steam_profile = get_profile(steam_profile_id)
-    # games = get_profile(steam_profile_id)
-    games = []
+    steam_profile_apps = sorted(list(get_profile_apps(steam_profile_id)), key= lambda x: x.playtime, reverse=True)
+    print(steam_profile_apps)
     if steam_profile:
         return render_template('user/user.html', username=username,
-                               steam_profile=steam_profile, games=games)
+                               steam_profile=steam_profile, steam_profile_apps=steam_profile_apps)
     else:
         return abort(404)

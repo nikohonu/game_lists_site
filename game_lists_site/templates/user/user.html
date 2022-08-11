@@ -6,18 +6,18 @@
 {% block content %}
     <h1 style='text-align:center'>Steam profile</h1>
     <div style='display: flex; align-items: center'>
-        <img src="{{steam_profile['avatar_url']}}" alt="Steam avatar">
+        <img src="{{steam_profile.avatar_url}}" alt="Steam avatar">
         <div>
-            <a href="{{steam_profile['url']}}" style='display: block'><h1 style="display:inline">{{steam_profile['name']}}</h1></a>
-            <a href="{{steam_profile['url']}}">Steam ID: {{steam_profile['id']}}</a>
+            <a href="{{steam_profile.url}}" style='display: block'><h1 style="display:inline">{{steam_profile.name}}</h1></a>
+            <a href="{{steam_profile.url}}">Steam ID: {{steam_profile.id}}</a>
         </div>
     </div>
     <h1 style='text-align:center'>Game list</h1>
     <div>
-        {% for game in games %}
+        {% for steam_profile_app in steam_profile_apps %}
             <div>
-                {{game['name']}}
-                {{game['playtime_forever']}}
+                {{steam_profile_app.steam_app.name}}
+                {{steam_profile_app.playtime}}
             </div>
         {% endfor %}
     </div>

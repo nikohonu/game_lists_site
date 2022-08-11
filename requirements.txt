@@ -1,2 +1,4 @@
 flask
 appdirs
+steam
+peewee
