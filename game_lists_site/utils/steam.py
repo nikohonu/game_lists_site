@@ -54,7 +54,8 @@ def get_profile(profile_id):
             profile.name = result['personaname']
             profile.url = result['profileurl']
             profile.avatar_url = result['avatarfull']
-            profile.time_created = dt.datetime.fromtimestamp(result['timecreated'])
+            profile.time_created = dt.datetime.fromtimestamp(
+                result['timecreated'])
             profile.last_update_time = dt.datetime.now()
             profile.save()
     return profile
@@ -66,7 +67,6 @@ def get_profile_apps(profile_id):
         return None
     update = not profile.last_apps_update_time or delta_gt(
         profile.last_apps_update_time, 1)
-    print(update)
     if update:
         query = SteamProfileApp.delete().where(SteamProfileApp.steam_profile == profile)
         query.execute()

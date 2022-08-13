@@ -12,13 +12,19 @@
             <a href="{{steam_profile.url}}">Steam ID: {{steam_profile.id}}</a>
         </div>
     </div>
-    <h1 style='text-align:center'>Game list</h1>
+    <h2 style='text-align:center'>Game list</h2>
     <div>
-        {% for steam_profile_app in steam_profile_apps %}
-            <div>
-                {{steam_profile_app.steam_app.name}}
-                {{steam_profile_app.playtime}}
-            </div>
-        {% endfor %}
+             <table>
+                <tr>
+                    <th>Game</th>
+                    <th>Playtime (minutes)</th>
+                </tr>
+                {% for steam_profile_app in steam_profile_apps %}
+                <tr>
+                    <td>{{steam_profile_app.steam_app.name}}</td>
+                    <td>{{steam_profile_app.playtime}}</td>
+                </tr>
+                {% endfor %}
+    </table>
     </div>
 {% endblock %}

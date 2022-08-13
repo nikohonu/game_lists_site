@@ -19,7 +19,6 @@ def user(username: str):
         abort(404)
     steam_profile = get_profile(steam_profile_id)
     steam_profile_apps = sorted(list(get_profile_apps(steam_profile_id)), key= lambda x: x.playtime, reverse=True)
-    print(steam_profile_apps)
     if steam_profile:
         return render_template('user/user.html', username=username,
                                steam_profile=steam_profile, steam_profile_apps=steam_profile_apps)

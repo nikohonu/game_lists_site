@@ -60,13 +60,13 @@ header .action {
     padding: 0 1rem 1rem;
 }
 
-.content > header {
+.content>header {
     border-bottom: 1px solid lightgray;
     display: flex;
     align-items: flex-end;
 }
 
-.content > header h1 {
+.content>header h1 {
     flex: auto;
     margin: 1rem 0 0.25rem 0;
 }
@@ -78,17 +78,17 @@ header .action {
     border: 1px solid #377ba8;
 }
 
-.post > header {
+.post>header {
     display: flex;
     align-items: flex-end;
     font-size: 0.85rem;
 }
 
-.post > header > div:first-of-type {
+.post>header>div:first-of-type {
     flex: auto;
 }
 
-.post > header h1 {
+.post>header h1 {
     font-size: 1.5rem;
     margin-bottom: 0;
 }
@@ -134,4 +134,14 @@ input.danger {
 input[type=submit] {
     align-self: start;
     min-width: 10em;
+}
+
+/* New porerties */
+.center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+th {
+    text-align: left;
 }

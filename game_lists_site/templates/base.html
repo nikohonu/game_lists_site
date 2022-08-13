@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <title>{% block title %}{% endblock %} - Game Lists</title>
 </head>
+
 <body>
     <nav>
         <h1>Game Lists</h1>
@@ -24,9 +26,10 @@
             {% block header %}{% endblock %}
         </header>
         {% for message in get_flashed_messages() %}
-            <div class="flash">{{ message }}</div>
+        <div class="flash">{{ message }}</div>
         {% endfor %}
         {% block content %}{% endblock %}
     </section>
 </body>
+
 </html>

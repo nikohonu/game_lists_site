@@ -2,3 +2,4 @@ flask
 appdirs
 steam
 peewee
+BeautifulSoup4
