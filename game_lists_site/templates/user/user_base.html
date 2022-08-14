@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block header %}
+<h1>{% block title %}{{ username }} {% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+<nav class="center">
+    {% if url_for(request.endpoint, username=username) == url_for('user.user', username=username) %}
+    <a href={{url_for('user.user', username=username )}} class="nav-link-active">Overview</a>
+    {% else %}
+    <a href={{url_for('user.user', username=username )}} class="nav-link">Overview</a>
+    {% endif %}
+    {% if url_for(request.endpoint, username=username) == url_for('user.recommendation', username=username ) %}
+    <a href={{url_for('user.recommendation', username=username )}} class="nav-link-active">Recommendation</a>
+    {% else %}
+    <a href={{url_for('user.recommendation', username=username )}} class="nav-link">Recommendation</a>
+    {% endif %}
+    
+</nav>
+{% block user_content %}{% endblock %}
+{% endblock %}
