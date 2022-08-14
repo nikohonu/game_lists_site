@@ -2,8 +2,11 @@
 <!-- extends brings 'base.html' patterns to 'register.html' -->
 
 {% block header %}
-<h1>{% block title %}Register{% endblock %}</h1>
-<!-- Base title block will concatenate this block, and that is how control flows works out between files -->
+<div class="sub-header">
+    <div class="block">
+        <h1>{% block title %}Register{% endblock %}</h1>
+    </div>
+</div>
 {% endblock %}
 
 {% block content %}

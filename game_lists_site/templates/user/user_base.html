@@ -1,22 +1,38 @@
 {% extends 'base.html' %}
 
 {% block header %}
-<h1>{% block title %}{{ username }} {% endblock %}</h1>
+<div class="sub-header">
+    <div class="block">
+        <h1>{% block title %}{{ username }}'s profile{% block section %}{% endblock %}{% endblock %}</h1>
+        <nav>
+            <div class="nav-center">
+                {% if url_for(request.endpoint, username=username) == url_for('user.user', username=username) %}
+                <a href={{url_for('user.user', username=username )}} class="nav-link-active">Overview</a>
+                {% else %}
+                <a href={{url_for('user.user', username=username )}}>Overview</a>
+                {% endif %}
+                {% if url_for(request.endpoint, username=username) == url_for('user.recommendations', username=username)
+                %}
+                <a href={{url_for('user.recommendations', username=username )}}
+                    class="nav-link-active">Recommendations</a>
+                {% else %}
+                <a href={{url_for('user.recommendations', username=username )}}>Recommendations</a>
+                {% endif %}
+                {% if url_for(request.endpoint, username=username) == url_for('user.statistics', username=username )
+                %}
+                <a href={{url_for('user.statistics', username=username )}} class="nav-link-active">Statistics</a>
+                {% else %}
+                <a href={{url_for('user.statistics', username=username )}}>Statistics</a>
+                {% endif %}
+            </div>
+        </nav>
+    </div>
+</div>
+{% endblock %}
+{% block nav %}
 {% endblock %}
 
 {% block content %}
-<nav class="center">
-    {% if url_for(request.endpoint, username=username) == url_for('user.user', username=username) %}
-    <a href={{url_for('user.user', username=username )}} class="nav-link-active">Overview</a>
-    {% else %}
-    <a href={{url_for('user.user', username=username )}} class="nav-link">Overview</a>
-    {% endif %}
-    {% if url_for(request.endpoint, username=username) == url_for('user.recommendation', username=username ) %}
-    <a href={{url_for('user.recommendation', username=username )}} class="nav-link-active">Recommendation</a>
-    {% else %}
-    <a href={{url_for('user.recommendation', username=username )}} class="nav-link">Recommendation</a>
-    {% endif %}
 
-</nav>
 {% block user_content %}{% endblock %}
 {% endblock %}
