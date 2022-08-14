@@ -1,11 +1,19 @@
 import functools
 
-from flask import (Blueprint, flash, g, redirect, render_template, request,
-                   session, url_for)
+from flask import (
+    Blueprint,
+    flash,
+    g,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from game_lists_site.db import get_db
 import game_lists_site.utils.steam as steam
+from game_lists_site.db import get_db
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -30,7 +38,8 @@ def register():
             error = 'Invalid steam profile url!'
         if error is None:
             try:
-                db.execute('INSERT INTO steam_profile (id) VALUES (?)', (steam_profile_id,))
+                db.execute('INSERT INTO steam_profile (id) VALUES (?)',
+                           (steam_profile_id,))
                 db.commit()
                 db.execute(
                     'INSERT INTO user (username, password, steam_profile_id) '

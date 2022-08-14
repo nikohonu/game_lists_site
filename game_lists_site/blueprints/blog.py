@@ -1,6 +1,4 @@
-from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for
-)
+from flask import Blueprint, flash, g, redirect, render_template, request, url_for
 from werkzeug.exceptions import abort
 
 from game_lists_site.blueprints.auth import login_required
@@ -46,7 +44,8 @@ def create():
     return render_template('blog/create.html')
 
 
-def get_post(id, check_author=True):  # check_author arg is defined so that the function can be used to get a post without checking the author
+# check_author arg is defined so that the function can be used to get a post without checking the author
+def get_post(id, check_author=True):
     post = get_db().execute(
         'SELECT p.id, title, body, created, author_id, username'
         ' FROM post p JOIN user u ON p.author_id = u.id'
@@ -58,12 +57,14 @@ def get_post(id, check_author=True):  # check_author arg is defined so that the 
         abort(404, f"Post id {id} doesn`t exist.")
 
     if check_author and post['author_id'] != g.user['id']:
-        abort(403)  # abort() will raise a special exception that returns an HTTP status code.
+        # abort() will raise a special exception that returns an HTTP status code.
+        abort(403)
 
     return post
 
 
-@bp.route('/<int:id>/update', methods=('GET', 'POST'))  # The <int:id> defines that the URL must have the post id to update
+# The <int:id> defines that the URL must have the post id to update
+@bp.route('/<int:id>/update', methods=('GET', 'POST'))
 @login_required
 def update(id):
     post = get_post(id)

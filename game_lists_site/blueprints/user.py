@@ -18,12 +18,14 @@ def user(username: str):
     else:
         abort(404)
     steam_profile = get_profile(steam_profile_id)
-    steam_profile_apps = sorted(list(get_profile_apps(steam_profile_id)), key= lambda x: x.playtime, reverse=True)
+    steam_profile_apps = sorted(list(get_profile_apps(
+        steam_profile_id)), key=lambda x: x.playtime, reverse=True)
     if steam_profile:
         return render_template('user/user.html', username=username,
                                steam_profile=steam_profile, steam_profile_apps=steam_profile_apps)
     else:
         return abort(404)
+
 
 @bp.route('/<username>/recommendation')
 def recommendation(username: str):
@@ -37,10 +39,10 @@ def recommendation(username: str):
     else:
         abort(404)
     steam_profile = get_profile(steam_profile_id)
-    steam_profile_apps = sorted(list(get_profile_apps(steam_profile_id)), key= lambda x: x.playtime, reverse=True)
+    steam_profile_apps = sorted(list(get_profile_apps(
+        steam_profile_id)), key=lambda x: x.playtime, reverse=True)
     if steam_profile:
         return render_template('user/recommendation.html', username=username,
                                steam_profile=steam_profile, steam_profile_apps=steam_profile_apps)
     else:
         return abort(404)
-

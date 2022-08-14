@@ -2,18 +2,18 @@
 <!-- extends brings 'base.html' patterns to 'register.html' -->
 
 {% block header %}
-    <h1>{% block title %}Register{% endblock %}</h1>
+<h1>{% block title %}Register{% endblock %}</h1>
 <!-- Base title block will concatenate this block, and that is how control flows works out between files -->
 {% endblock %}
 
 {% block content %}
-    <form method="post">
-        <label for="username">Username</label>
-        <input name="username" id="username" required>
-        <label for="password">Password</label>
-        <input type="password" name="password" id="password" required>
-        <label for="steam_profile_url">Steam profile URL</label>
-        <input name="steam_profile_url" id="steam_profile_url" required>
-        <input type="submit" value="Register">
-    </form>
+<form method="post">
+    <label for="username">Username</label>
+    <input name="username" id="username" required>
+    <label for="password">Password</label>
+    <input type="password" name="password" id="password" required>
+    <label for="steam_profile_url">Steam profile URL</label>
+    <input name="steam_profile_url" id="steam_profile_url" required>
+    <input type="submit" value="Register">
+</form>
 {% endblock %}

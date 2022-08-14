@@ -2,9 +2,18 @@ import datetime as dt
 from pathlib import Path
 
 from appdirs import user_data_dir
-from peewee import (AutoField, BigIntegerField, BooleanField, CompositeKey,
-                    DateField, FloatField, ForeignKeyField, IntegerField,
-                    Model, SqliteDatabase, TextField, TimestampField, DateTimeField)
+from peewee import (
+    AutoField,
+    BigIntegerField,
+    BooleanField,
+    CompositeKey,
+    DateTimeField,
+    ForeignKeyField,
+    IntegerField,
+    Model,
+    SqliteDatabase,
+    TextField,
+)
 
 user_data_dir = Path(user_data_dir(
     appauthor='Niko Honue', appname='game_lists_site'))

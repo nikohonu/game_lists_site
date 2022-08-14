@@ -137,19 +137,16 @@ input[type=submit] {
 }
 
 /* New porerties */
-nav.center  {
+nav.center {
     text-align: center;
     display: block;
 }
 
-
-
-.nav-link  {
+.nav-link {
     color: var(--ctp-latte-text);
 }
 
-
-.nav-link-active  {
+.nav-link-active {
     color: var(--ctp-latte-red);
 }
 
