@@ -1,5 +1,8 @@
-flask
 appdirs
-steam
-peewee
+apscheduler
 BeautifulSoup4
+flask
+flask_peewee
+numpy
+peewee
+steam

@@ -14,7 +14,7 @@
             <div class="nav-left">
                 <h1>Game Lists</h1>
             </div>
-            <div class="nav-center">Games</div>
+            <div class="nav-center"><a href="{{ url_for('games.games') }}">Games</a></div>
             <div class="nav-right">
                 {% if g.user %}
                 <a href="{{ url_for('user.user', username=g.user['username']) }}">{{ g.user['username'] }}</a>

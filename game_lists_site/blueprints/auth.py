@@ -14,6 +14,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 import game_lists_site.utils.steam as steam
 from game_lists_site.db import get_db
+from game_lists_site.models import SteamProfile
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -38,8 +39,7 @@ def register():
             error = 'Invalid steam profile url!'
         if error is None:
             try:
-                db.execute('INSERT INTO steam_profile (id) VALUES (?)',
-                           (steam_profile_id,))
+                SteamProfile.get_or_create(id=steam_profile_id)
                 db.commit()
                 db.execute(
                     'INSERT INTO user (username, password, steam_profile_id) '

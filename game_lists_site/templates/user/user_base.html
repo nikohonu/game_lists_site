@@ -3,13 +3,18 @@
 {% block header %}
 <div class="sub-header">
     <div class="block">
-        <h1>{% block title %}{{ username }}'s profile{% block section %}{% endblock %}{% endblock %}</h1>
+        <h1>{% block title %}{{ username }}'s{% block section %}{% endblock %}{% endblock %}</h1>
         <nav>
             <div class="nav-center">
                 {% if url_for(request.endpoint, username=username) == url_for('user.user', username=username) %}
                 <a href={{url_for('user.user', username=username )}} class="nav-link-active">Overview</a>
                 {% else %}
                 <a href={{url_for('user.user', username=username )}}>Overview</a>
+                {% endif %}
+                {% if url_for(request.endpoint, username=username) == url_for('user.games', username=username) %}
+                <a href={{url_for('user.games', username=username )}} class="nav-link-active">Games</a>
+                {% else %}
+                <a href={{url_for('user.games', username=username )}}>Games</a>
                 {% endif %}
                 {% if url_for(request.endpoint, username=username) == url_for('user.recommendations', username=username)
                 %}

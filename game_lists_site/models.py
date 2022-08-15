@@ -7,7 +7,9 @@ from peewee import (
     BigIntegerField,
     BooleanField,
     CompositeKey,
+    DateField,
     DateTimeField,
+    FloatField,
     ForeignKeyField,
     IntegerField,
     Model,
@@ -67,12 +69,58 @@ class SteamProfileApp(BaseModel):
         primary_key = CompositeKey('steam_profile', 'steam_app')
 
 
+class GameStatistics(BaseModel):
+    steam_app = ForeignKeyField(
+        SteamApp, on_delete='CASCADE', backref='game_statistics', primary_key=True)
+    total_playtime = IntegerField(null=True)
+    mean_playtime = FloatField(null=True)
+    median_playtime = FloatField(null=True)
+    max_playtime = IntegerField(null=True)
+    min_playtime = IntegerField(null=True)
+    player_count = IntegerField(null=True)
+
+
 class User(BaseModel):
     id = AutoField()
     username = TextField(unique=True)
     password = TextField()
     steam_profile = ForeignKeyField(
         SteamProfile, on_delete='CASCADE', backref='users')
+
+
+class Game(BaseModel):
+    id = AutoField()
+    steam_app = ForeignKeyField(
+        SteamApp, on_delete='CASCADE', backref='game_statistics', null=True,)
+
+
+class Status(BaseModel):
+    id = AutoField()
+    name = TextField()
+
+
+class UserGame(BaseModel):
+    user = ForeignKeyField(
+        User, on_delete='CASCADE', backref='users_game')
+    game = ForeignKeyField(
+        Game, on_delete='CASCADE', backref='user_games')
+    score = IntegerField(null=True)
+    status = ForeignKeyField(
+        Status, on_delete='CASCADE', backref='user_games')
+    predicted_score = FloatField(null=True)
+
+    class Meta:
+        primary_key = CompositeKey('user', 'game')
+
+
+class UserGamePlaytime(BaseModel):
+    id = AutoField()
+    user_game = ForeignKeyField(
+        User, on_delete='CASCADE', backref='user_game_playtimes',)
+    is_steam_playtime = BooleanField()
+    playtime = IntegerField()
+    start_date = DateField()
+    end_date = DateField()
 
 
 models = BaseModel.__subclasses__()

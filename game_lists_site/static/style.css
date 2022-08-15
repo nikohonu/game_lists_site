@@ -46,6 +46,7 @@ nav div {
 
 nav a {
     color: var(--ctp-mocha-text);
+    text-decoration: none;
 }
 
 /* Main */

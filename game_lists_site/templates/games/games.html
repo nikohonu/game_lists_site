@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block header %}
+<div class="sub-header">
+    <div class="block">
+        <h1>{% block title %}Games{% block section %}{% endblock %}{% endblock %}</h1>
+    </div>
+</div>
+{% endblock %}
+{% block content %}
+<table>
+    <tr>
+        <th>Game</th>
+        <th>total_playtime</th>
+        <th>mean_playtime</th>
+        <th>median_playtime</th>
+        <th>max_playtime</th>
+        <th>min_playtime</th>
+        <th>player_count</th>
+    </tr>
+    {% for gs in object_list %}
+    <tr>
+        <td>{{gs.steam_app.name}}</td>
+        <td>{{(gs.total_playtime/60)|round|int}}</td>
+        <td>{{(gs.mean_playtime/60)|round|int}}</td>
+        <td>{{(gs.median_playtime/60)|round|int}}</td>
+        <td>{{(gs.max_playtime/60)|round|int}}</td>
+        <td>{{(gs.min_playtime/60)|round|int}}</td>
+        <td>{{gs.player_count}}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% if page > 1 %}
+<a href="./?page={{ page - 1 }}">Prev</a>
+{% endif %}
+{% if page < pagination.get_pages() %}
+<a href="./?page={{ page + 1 }}">Next</a>
+{% endif %}
+{% endblock %}

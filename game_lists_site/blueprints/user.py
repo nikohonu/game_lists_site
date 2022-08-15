@@ -29,6 +29,12 @@ def user(username: str):
         return abort(404)
 
 
+@bp.route('/<username>/games')
+def games(username: str):
+
+    return render_template('user/games.html', username=username)
+
+
 @bp.route('/<username>/recommendations')
 def recommendations(username: str):
     return render_template('user/recommendations.html', username=username)
