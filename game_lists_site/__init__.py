@@ -33,16 +33,9 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    import game_lists_site.db as db
-    db.init_app(app)
-
     import game_lists_site.blueprints.auth as auth
     import game_lists_site.models as models
     app.register_blueprint(auth.bp)
-
-    import game_lists_site.blueprints.blog as blog
-    app.register_blueprint(blog.bp)
-    app.add_url_rule('/', endpoint='index')
 
     import game_lists_site.blueprints.user as user
     app.register_blueprint(user.bp)
@@ -52,6 +45,10 @@ def create_app(test_config=None):
 
     import game_lists_site.blueprints.games as games
     app.register_blueprint(games.bp)
+
+    import game_lists_site.blueprints.index as index
+    app.register_blueprint(index.bp)
+    app.add_url_rule('/', endpoint='index')
 
     # cron start
     scheduler = BackgroundScheduler()

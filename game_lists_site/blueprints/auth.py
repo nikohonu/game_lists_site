@@ -13,8 +13,7 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import game_lists_site.utils.steam as steam
-from game_lists_site.db import get_db
-from game_lists_site.models import SteamProfile
+from game_lists_site.models import SteamProfile, User
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -27,7 +26,6 @@ def register():
         steam_profile_url = request.form['steam_profile_url']
         steam_profile_id = steam.get_profile_id_from_url(
             steam_profile_url) if steam_profile_url else None
-        db = get_db()
         error = None
         if not username:
             error = 'Username is required!'
@@ -38,19 +36,14 @@ def register():
         elif not steam_profile_id:
             error = 'Invalid steam profile url!'
         if error is None:
-            try:
-                SteamProfile.get_or_create(id=steam_profile_id)
-                db.commit()
-                db.execute(
-                    'INSERT INTO user (username, password, steam_profile_id) '
-                    'VALUES (?, ?, ?)',
-                    (username, generate_password_hash(password), steam_profile_id),
-                )
-                db.commit()
-            except db.IntegrityError:
-                error = f"User {username} is already registered."
-            else:
-                return redirect(url_for("auth.login"))
+            # try:
+            steam_profile, _ = SteamProfile.get_or_create(id=steam_profile_id)
+            User.create(username=username, password=generate_password_hash(
+                password), steam_profile=steam_profile)
+            # except db.IntegrityError:
+            #     error = f"User {username} is already registered."
+            # else:
+            return redirect(url_for("auth.login"))
 
         flash(error)
 
@@ -62,22 +55,19 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        db = get_db()
         error = None
-        user = db.execute(
-            'SELECT * FROM user WHERE username = ?', (username,)
-        ).fetchone()  # fetchone() returns one row from the query
+        user = User.get_or_none(username=username)
 
         if user is None:
             error = 'Incorrect username.'
         # check_password_hash() hashes the submitted password in the same way as the stored and compares them
-        elif not check_password_hash(user['password'], password):
+        elif not check_password_hash(user.password, password):
             error = 'Incorrect password.'
 
         if error is None:
             session.clear()  # session is a dict that stores data across requests
-            session['user_id'] = user['id']
-            return redirect(url_for('index'))
+            session['user_id'] = user.id
+            return redirect(url_for('user.user', username=user.username))
 
         flash(error)
 
@@ -92,9 +82,7 @@ def load_logged_in_user():
     if user_id is None:
         g.user = None
     else:
-        g.user = get_db().execute(
-            'SELECT * FROM user WHERE id = ?', (user_id,)
-        ).fetchone()
+        g.user = User.get_or_none(id=user_id)
 
 
 @bp.route('/logout')

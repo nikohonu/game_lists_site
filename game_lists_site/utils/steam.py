@@ -1,13 +1,15 @@
 import datetime as dt
+from sqlite3 import Timestamp
 
+import requests
 from bs4 import BeautifulSoup
 from flask import current_app
 from requests import get
 from steam.steamid import SteamID
 from steam.webapi import WebAPI
 
-from game_lists_site.db import get_db
 from game_lists_site.models import SteamApp, SteamProfile, SteamProfileApp
+from game_lists_site.utils.utils import delta_gt
 
 
 def get_app_details(app_id):
@@ -32,11 +34,6 @@ def get_app_tags(app_id):
 def get_profile_id_from_url(url: str):
     print('call get_steam_id_from_url')
     return SteamID.from_url(url)
-
-
-def delta_gt(datetime, days=1):
-    current_date = dt.datetime.now()
-    return (current_date - datetime).days > days
 
 
 def get_profile(profile_id):
@@ -87,3 +84,29 @@ def get_profile_apps(profile_id):
                 SteamProfileApp.create(steam_profile=profile,
                                        steam_app=app, playtime=r['playtime_forever'])
     return [spa for spa in SteamProfileApp.select().where(SteamProfileApp.steam_profile == profile) if spa.steam_app.is_game]
+
+
+def predict_start_and_end_dates(profile, app):
+    print('call GetPlayerAchievements')
+    result = requests.get('http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/',
+                          params={
+                              'appid': app.id,
+                              'key': current_app.config['STEAM_API_KEY'],
+                              'steamid': profile.id}).json()
+    result = result['playerstats'] if result and 'playerstats' in result else None
+    result = result['achievements'] if result and 'achievements' in result else None
+    timestamps = []
+    if result:
+        [timestamps.append(a['unlocktime'])
+         for a in result if a['unlocktime'] > 0]
+    start = None
+    end = None
+    if len(timestamps) >= 2:
+        start = min(timestamps)
+        end = max(timestamps)
+    elif len(timestamps) == 1:
+        start = end = timestamps[0]
+    print(start, end, timestamps)
+    start_date = dt.datetime.fromtimestamp(start) if start else None
+    end_date = dt.datetime.fromtimestamp(end) if end else None
+    return (start_date, end_date)

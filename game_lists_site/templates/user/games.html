@@ -3,4 +3,32 @@
 {% block section %} games{% endblock %}
 
 {% block user_content %}
+<table>
+    <tr>
+        <th>Game</th>
+        <th>Status</th>
+        <th>Steam playtime</th>
+        <th>Other playtime</th>
+        <th>Total playtime</th>
+        <th>Dates</th>
+        <th>Completions</th>
+    </tr>
+    {% for ug in object_list %}
+    <tr>
+        <td>{{ug.game.steam_app.name}}</td>
+        <td>{{ug.status.name}}</td>
+        <td>{{(ug.steam_playtime/60)|round|int}}</td>
+        <td>{{(ug.other_playtime/60)|round|int}}</td>
+        <td>{{((ug.steam_playtime + ug.other_playtime)/60)|round|int}}</td>
+        <td>{{ug.start_date}}<br>{{ug.end_date}}</td>
+        <td>{{ug.completions}}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% if page > 1 %}
+<a href="?page={{ page - 1 }}">Prev</a>
+{% endif %}
+{% if page < pagination.get_pages() %}
+<a href="?page={{ page + 1 }}">Next</a>
+{% endif %}
 {% endblock %}

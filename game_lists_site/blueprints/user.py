@@ -1,25 +1,28 @@
-from flask import Blueprint, abort, render_template
+import datetime as dt
 
-from game_lists_site.db import get_db
-from game_lists_site.utils.steam import get_profile, get_profile_apps
+from flask import Blueprint, abort, render_template
+from flask_peewee.utils import get_object_or_404, object_list
+
+from game_lists_site.utils.steam import (
+    get_profile,
+    get_profile_apps,
+    predict_start_and_end_dates,
+)
+from game_lists_site.utils.utils import delta_gt
+
+from ..models import Game, Status, SteamApp, SteamProfileApp, User, UserGame
 
 bp = Blueprint('user', __name__, url_prefix='/user')
 
 
 @bp.route('/<username>')
 def user(username: str):
-    db = get_db()
-    steam_profile_id = db.execute(
-        'SELECT steam_profile_id FROM user WHERE username = ?',
-        (username,)
-    ).fetchone()
-    if steam_profile_id:
-        steam_profile_id = steam_profile_id[0]
-    else:
+    user = User.get_or_none(username=username)
+    if not user:
         abort(404)
-    steam_profile = get_profile(steam_profile_id)
+    steam_profile = get_profile(user.steam_profile.id)
     steam_profile_apps = sorted(list(get_profile_apps(
-        steam_profile_id)), key=lambda x: x.playtime, reverse=True)
+        steam_profile.id)), key=lambda x: x.playtime, reverse=True)
     steam_profile_apps = [
         app for app in steam_profile_apps if app.playtime != 0]
     if steam_profile:
@@ -31,8 +34,31 @@ def user(username: str):
 
 @bp.route('/<username>/games')
 def games(username: str):
-
-    return render_template('user/games.html', username=username)
+    user = get_object_or_404(User, User.username == username)
+    status = Status.get_or_none(Status.id == 1)
+    if not status:
+        status = Status.create(id=1, name='inbox')
+    update = not user.last_games_update_time or delta_gt(
+        user.last_games_update_time, 1)
+    if update:
+        for profile_app in get_profile_apps(user.steam_profile.id):
+            if profile_app.steam_app.is_game:
+                game, _ = Game.get_or_create(steam_app=profile_app.steam_app)
+                user_game = UserGame.get_or_none(
+                    UserGame.user == user, UserGame.game == game)
+                if not user_game:
+                    start_date, end_date = predict_start_and_end_dates(
+                        profile_app.steam_profile, profile_app.steam_app)
+                    UserGame.create(user=user, game=game, status=status,
+                                    steam_playtime=profile_app.playtime, start_date=start_date, end_date=end_date)
+                else:
+                    user_game.steam_playtime = profile_app.playtime
+                    user_game.save()
+            user.last_games_update_time = dt.datetime.now()
+            user.save()
+    user_games = UserGame.select().where(
+        UserGame.user == user).order_by(UserGame.steam_playtime.desc())
+    return object_list('user/games.html', user_games, username=username, paginate_by=40)
 
 
 @bp.route('/<username>/recommendations')

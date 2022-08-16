@@ -86,6 +86,7 @@ class User(BaseModel):
     password = TextField()
     steam_profile = ForeignKeyField(
         SteamProfile, on_delete='CASCADE', backref='users')
+    last_games_update_time = DateTimeField(null=True)
 
 
 class Game(BaseModel):
@@ -104,23 +105,18 @@ class UserGame(BaseModel):
         User, on_delete='CASCADE', backref='users_game')
     game = ForeignKeyField(
         Game, on_delete='CASCADE', backref='user_games')
-    score = IntegerField(null=True)
     status = ForeignKeyField(
         Status, on_delete='CASCADE', backref='user_games')
+    steam_playtime = IntegerField(null=True)
+    other_playtime = IntegerField(default=0)
+    start_date = DateField(null=True)
+    end_date = DateField(null=True)
     predicted_score = FloatField(null=True)
+    score = IntegerField(null=True)
+    completions = IntegerField(default=0)
 
     class Meta:
         primary_key = CompositeKey('user', 'game')
-
-
-class UserGamePlaytime(BaseModel):
-    id = AutoField()
-    user_game = ForeignKeyField(
-        User, on_delete='CASCADE', backref='user_game_playtimes',)
-    is_steam_playtime = BooleanField()
-    playtime = IntegerField()
-    start_date = DateField()
-    end_date = DateField()
 
 
 models = BaseModel.__subclasses__()
