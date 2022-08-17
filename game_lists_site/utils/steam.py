@@ -42,8 +42,12 @@ def get_profile(profile_id):
         profile.last_update_time, 1) if profile else False
     if (profile and update) or (not profile):
         print('call get_player_summaries')
-        web_api = WebAPI(key=current_app.config['STEAM_API_KEY'])
-        result = web_api.ISteamUser.GetPlayerSummaries(steamids=profile_id)
+        result = requests.get('https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/', params={
+            'key': current_app.config['STEAM_API_KEY'],
+            'steamids': profile_id
+        })
+        print(result.text)
+        result = result.json()
         result = result['response']['players'][0]
         if result:
             profile, _ = SteamProfile.get_or_create(id=profile_id)
@@ -67,26 +71,33 @@ def get_profile_apps(profile_id):
     if update:
         query = SteamProfileApp.delete().where(SteamProfileApp.steam_profile == profile)
         query.execute()
+
+        print('call get_owned_games')
+        result = requests.get('http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/',
+                              params={
+                                  'key': current_app.config['STEAM_API_KEY'],
+                                  'steamid': profile_id,
+                                  'include_appinfo': True,
+                                  'include_played_free_games': True}).json()
+        if result['response'] and 'games' in result['response']:
+            for r in result['response']['games']:
+                if r['rtime_last_played'] != 0:
+                    app = SteamApp.get_or_none(SteamApp.id == r['appid'])
+                    if not app:
+                        app = SteamApp.create(id=r['appid'], name=r['name'])
+                    else:
+                        app.name = r['name']
+                    SteamProfileApp.create(steam_profile=profile,
+                                           steam_app=app, playtime=r['playtime_forever'], last_play_time=dt.datetime.fromtimestamp(r['rtime_last_played']))
+    steam_profile_apps = [spa for spa in SteamProfileApp.select().where(
+        SteamProfileApp.steam_profile == profile) if spa.steam_app.is_game]
+    if steam_profile_apps:
         profile.last_apps_update_time = dt.datetime.now()
         profile.save()
-        print('call get_owned_games')
-        web_api = WebAPI(key=current_app.config['STEAM_API_KEY'])
-        result = web_api.IPlayerService.GetOwnedGames(
-            steamid=profile_id, appids_filter=[], include_appinfo=True,
-            include_free_sub=True, include_played_free_games=True, language="")
-        if result['response']:
-            for r in result['response']['games']:
-                app = SteamApp.get_or_none(SteamApp.id == r['appid'])
-                if not app:
-                    app = SteamApp.create(id=r['appid'], name=r['name'])
-                else:
-                    app.name = r['name']
-                SteamProfileApp.create(steam_profile=profile,
-                                       steam_app=app, playtime=r['playtime_forever'])
-    return [spa for spa in SteamProfileApp.select().where(SteamProfileApp.steam_profile == profile) if spa.steam_app.is_game]
+    return steam_profile_apps
 
 
-def predict_start_and_end_dates(profile, app):
+def predict_start_date(profile, app):
     print('call GetPlayerAchievements')
     result = requests.get('http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/',
                           params={
@@ -99,14 +110,7 @@ def predict_start_and_end_dates(profile, app):
     if result:
         [timestamps.append(a['unlocktime'])
          for a in result if a['unlocktime'] > 0]
-    start = None
-    end = None
-    if len(timestamps) >= 2:
-        start = min(timestamps)
-        end = max(timestamps)
-    elif len(timestamps) == 1:
-        start = end = timestamps[0]
-    print(start, end, timestamps)
-    start_date = dt.datetime.fromtimestamp(start) if start else None
-    end_date = dt.datetime.fromtimestamp(end) if end else None
-    return (start_date, end_date)
+    if timestamps:
+        return dt.datetime.fromtimestamp(min(timestamps))
+    else:
+        return None

@@ -64,6 +64,7 @@ class SteamProfileApp(BaseModel):
     steam_app = ForeignKeyField(
         SteamApp, on_delete='CASCADE', backref='steam_profiles_app')
     playtime = IntegerField()
+    last_play_time = DateTimeField()
 
     class Meta:
         primary_key = CompositeKey('steam_profile', 'steam_app')

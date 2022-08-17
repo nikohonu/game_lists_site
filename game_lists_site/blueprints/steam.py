@@ -1,6 +1,8 @@
 from flask import Blueprint, abort, jsonify
+from flask_peewee.utils import get_object_or_404
 
 import game_lists_site.utils.steam as steam
+from game_lists_site.models import SteamProfile, User
 
 bp = Blueprint('steam', __name__, url_prefix='/steam')
 
@@ -29,3 +31,13 @@ def get_profile_app(profile_id: int):
         return jsonify(result)
     else:
         abort(404)
+
+
+@bp.route('check-profile/<profile_id>')
+def check_profile(profile_id: int):
+    print(profile_id)
+    user = get_object_or_404(User, User.steam_profile == profile_id)
+    if user.last_games_update_time:
+        return user.username
+    else:
+        return abort(404)

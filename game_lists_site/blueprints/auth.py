@@ -74,7 +74,28 @@ def login():
     return render_template('auth/login.html')
 
 
-# registers a function that runs before the view function, no matter what URL is requested
+@bp.route('/delete', methods=['POST'])
+def delete():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        error = None
+        user = User.get_or_none(username=username)
+
+        if user is None:
+            error = 'Incorrect username.'
+        elif not check_password_hash(user.password, password):
+            error = 'Incorrect password.'
+
+        if error is None:
+            user.delete_instance()
+            return True
+
+        flash(error)
+
+    return render_template('auth/login.html')
+
+
 @bp.before_app_request
 def load_logged_in_user():
     user_id = session.get('user_id')

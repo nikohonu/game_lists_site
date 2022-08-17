@@ -29,7 +29,7 @@ def update_game_statistics():
 
 @bp.route('/')
 def games():
-    # update_game_statistics()
+    update_game_statistics()
     game_statistics = GameStatistics.select().order_by(
         GameStatistics.player_count.desc())
     return object_list('games/games.html', game_statistics, paginate_by=40)

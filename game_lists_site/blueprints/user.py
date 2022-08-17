@@ -1,12 +1,12 @@
 import datetime as dt
 
-from flask import Blueprint, abort, render_template
+from flask import Blueprint, abort, jsonify, render_template
 from flask_peewee.utils import get_object_or_404, object_list
 
 from game_lists_site.utils.steam import (
     get_profile,
     get_profile_apps,
-    predict_start_and_end_dates,
+    predict_start_date,
 )
 from game_lists_site.utils.utils import delta_gt
 
@@ -47,12 +47,14 @@ def games(username: str):
                 user_game = UserGame.get_or_none(
                     UserGame.user == user, UserGame.game == game)
                 if not user_game:
-                    start_date, end_date = predict_start_and_end_dates(
+                    start_date = predict_start_date(
                         profile_app.steam_profile, profile_app.steam_app)
+                    end_date = profile_app.last_play_time
                     UserGame.create(user=user, game=game, status=status,
                                     steam_playtime=profile_app.playtime, start_date=start_date, end_date=end_date)
                 else:
                     user_game.steam_playtime = profile_app.playtime
+                    end_date = profile_app.last_play_time
                     user_game.save()
             user.last_games_update_time = dt.datetime.now()
             user.save()
