@@ -10,7 +10,7 @@ from game_lists_site.utils.steam import (
 )
 from game_lists_site.utils.utils import delta_gt
 
-from ..models import Game, Status, SteamApp, SteamProfileApp, User, UserGame
+from ..models import Game, GameStatistics, Status, User, UserGame
 
 bp = Blueprint('user', __name__, url_prefix='/user')
 
@@ -58,6 +58,23 @@ def games(username: str):
                     user_game.save()
             user.last_games_update_time = dt.datetime.now()
             user.save()
+    # Update predict score start
+    for user_game in UserGame.select().where(UserGame.user == user):
+        pt = user_game.steam_playtime + user_game.other_playtime
+        game_statistics = GameStatistics.get_or_none(
+            GameStatistics.game == user_game.game)
+        if game_statistics:
+            median_pt = game_statistics.median_playtime
+            if pt > median_pt:
+                pt = (pt - median_pt) / (median_pt * 3 - median_pt)
+                pt = pt * (1 - 0) + 0
+                user_game.predicted_score = min(pt, 1)
+            else:
+                pt = (pt - 0) / (median_pt - 0)
+                pt = pt * (0 + 1) + -1
+                user_game.predicted_score = pt
+            user_game.save()
+    # Update predict score end
     user_games = UserGame.select().where(
         UserGame.user == user).order_by(UserGame.steam_playtime.desc())
     return object_list('user/games.html', user_games, username=username, paginate_by=40)

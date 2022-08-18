@@ -12,6 +12,7 @@
         <th>Other playtime</th>
         <th>Total playtime</th>
         <th>Dates</th>
+        <th>Predicted score</th>
         <th>Completions</th>
     </tr>
     {% for ug in object_list %}
@@ -23,6 +24,11 @@
         <td>{{(ug.other_playtime/60)|round|int}}</td>
         <td>{{((ug.steam_playtime + ug.other_playtime)/60)|round|int}}</td>
         <td>{{ug.start_date}}<br>{{ug.end_date}}</td>
+        {% if ug.predicted_score is not none %}
+            <td>{{((ug.predicted_score+1.0)*5)|round|int}}</td>
+        {% else %}
+            <td></td>
+        {% endif %}
         <td>{{ug.completions}}</td>
     </tr>
     {% endfor %}
@@ -30,6 +36,7 @@
 {% if page > 1 %}
 <a href="?page={{ page - 1 }}">Prev</a>
 {% endif %}
-{% if page < pagination.get_pages() %} <a href="?page={{ page + 1 }}">Next</a>
-    {% endif %}
-    {% endblock %}
+{% if page < pagination.get_pages() %}
+<a href="?page={{ page + 1 }}">Next</a>
+{% endif %}
+{% endblock %}

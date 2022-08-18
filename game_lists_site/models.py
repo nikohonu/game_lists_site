@@ -1,4 +1,5 @@
 import datetime as dt
+from ast import Mod
 from pathlib import Path
 
 from appdirs import user_data_dir
@@ -28,6 +29,11 @@ class BaseModel(Model):
     '''Base model for table in database'''
     class Meta:
         database = db
+
+
+class System(BaseModel):
+    key = TextField(primary_key=True)
+    date_time_value = DateTimeField(null=True)
 
 
 class SteamApp(BaseModel):
