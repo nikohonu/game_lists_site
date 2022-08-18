@@ -9,6 +9,7 @@
 {% block content %}
 <table>
     <tr>
+        <th>ID</th>
         <th>Game</th>
         <th>total_playtime</th>
         <th>mean_playtime</th>
@@ -19,7 +20,8 @@
     </tr>
     {% for gs in object_list %}
     <tr>
-        <td>{{gs.steam_app.name}}</td>
+        <td>{{gs.game.id}}</td>
+        <td>{{gs.game.steam_app.name}}</td>
         <td>{{(gs.total_playtime/60)|round|int}}</td>
         <td>{{(gs.mean_playtime/60)|round|int}}</td>
         <td>{{(gs.median_playtime/60)|round|int}}</td>
@@ -32,7 +34,6 @@
 {% if page > 1 %}
 <a href="./?page={{ page - 1 }}">Prev</a>
 {% endif %}
-{% if page < pagination.get_pages() %}
-<a href="./?page={{ page + 1 }}">Next</a>
-{% endif %}
-{% endblock %}
+{% if page < pagination.get_pages() %} <a href="./?page={{ page + 1 }}">Next</a>
+    {% endif %}
+    {% endblock %}

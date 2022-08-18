@@ -4,6 +4,7 @@ from flask import (
     Blueprint,
     flash,
     g,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -88,9 +89,8 @@ def delete():
             error = 'Incorrect password.'
 
         if error is None:
-            user.delete_instance()
-            return True
-
+            user.steam_profile.delete_instance(recursive=True)
+            return jsonify(True)
         flash(error)
 
     return render_template('auth/login.html')

@@ -70,17 +70,6 @@ class SteamProfileApp(BaseModel):
         primary_key = CompositeKey('steam_profile', 'steam_app')
 
 
-class GameStatistics(BaseModel):
-    steam_app = ForeignKeyField(
-        SteamApp, on_delete='CASCADE', backref='game_statistics', primary_key=True)
-    total_playtime = IntegerField(null=True)
-    mean_playtime = FloatField(null=True)
-    median_playtime = FloatField(null=True)
-    max_playtime = IntegerField(null=True)
-    min_playtime = IntegerField(null=True)
-    player_count = IntegerField(null=True)
-
-
 class User(BaseModel):
     id = AutoField()
     username = TextField(unique=True)
@@ -94,6 +83,17 @@ class Game(BaseModel):
     id = AutoField()
     steam_app = ForeignKeyField(
         SteamApp, on_delete='CASCADE', backref='game_statistics', null=True,)
+
+
+class GameStatistics(BaseModel):
+    game = ForeignKeyField(
+        Game, on_delete='CASCADE', backref='game_statistics', primary_key=True)
+    total_playtime = IntegerField(null=True)
+    mean_playtime = FloatField(null=True)
+    median_playtime = FloatField(null=True)
+    max_playtime = IntegerField(null=True)
+    min_playtime = IntegerField(null=True)
+    player_count = IntegerField(null=True)
 
 
 class Status(BaseModel):

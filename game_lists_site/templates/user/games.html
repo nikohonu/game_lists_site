@@ -5,6 +5,7 @@
 {% block user_content %}
 <table>
     <tr>
+        <th>ID</th>
         <th>Game</th>
         <th>Status</th>
         <th>Steam playtime</th>
@@ -15,6 +16,7 @@
     </tr>
     {% for ug in object_list %}
     <tr>
+        <td>{{ug.game.id}}</td>
         <td>{{ug.game.steam_app.name}}</td>
         <td>{{ug.status.name}}</td>
         <td>{{(ug.steam_playtime/60)|round|int}}</td>
@@ -28,7 +30,6 @@
 {% if page > 1 %}
 <a href="?page={{ page - 1 }}">Prev</a>
 {% endif %}
-{% if page < pagination.get_pages() %}
-<a href="?page={{ page + 1 }}">Next</a>
-{% endif %}
-{% endblock %}
+{% if page < pagination.get_pages() %} <a href="?page={{ page + 1 }}">Next</a>
+    {% endif %}
+    {% endblock %}
