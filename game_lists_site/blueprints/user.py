@@ -1,19 +1,26 @@
 import datetime as dt
 import json
+import threading
 
 from flask import Blueprint, abort, jsonify, render_template
 from flask_peewee.utils import get_object_or_404, object_list
 from sklearn.metrics.pairwise import cosine_similarity
 
-from game_lists_site.blueprints.games import update_game_statistics
+from game_lists_site.models import (
+    Game,
+    GameStatistics,
+    Simularity,
+    Status,
+    System,
+    User,
+    UserGame,
+)
 from game_lists_site.utils.steam import (
     get_profile,
     get_profile_apps,
     predict_start_date,
 )
 from game_lists_site.utils.utils import delta_gt
-
-from ..models import Game, GameStatistics, Simularity, Status, User, UserGame
 
 bp = Blueprint('user', __name__, url_prefix='/user')
 
@@ -86,8 +93,11 @@ def games(username: str):
 
 
 def update_simularity():
-    users = User.select()
-    game_statistics = GameStatistics.select()
+    excluded_games = [38, 97, 226, 96]
+    users = [user for user in User.select() if len(
+        UserGame.select().where(UserGame.user == user)) >= 10]
+    game_statistics = [game for game in GameStatistics.select(
+    ) if game.game.id not in excluded_games]
     user_vecs = []
     for i, user in enumerate(users):
         print(i)
@@ -117,18 +127,24 @@ def update_simularity():
 
 @bp.route('/<username>/recommendations')
 def recommendations(username: str):
-    # update_simularity()
+    last_update, _ = System.get_or_create(key='Simularity')
+    if not last_update.date_time_value or delta_gt(last_update.date_time_value, 1):
+        threading.Thread(target=update_simularity).start()
+        last_update.date_time_value = dt.datetime.now()
+        last_update.save()
     user = get_object_or_404(User, User.username == username)
     simularities = json.loads(Simularity.get_or_none(
         Simularity.user == user).simularities)
     result = {}
     simularities = dict(sorted(simularities.items(),
                         key=lambda item: item[1], reverse=True))
-    for key in simularities:
+    for i, key in enumerate(simularities):
+        if i == 0:
+            continue
         user = User.get_by_id(key)
-        user_games = UserGame.select().where(UserGame.user == user)
-        if len(user_games) >= 10:
-            result[User.get_by_id(key)] = simularities[key]
+        result[User.get_by_id(key)] = simularities[key]
+        if i >= 10:
+            break
     return render_template('user/recommendations.html', username=username, simularities=result)
 
 
