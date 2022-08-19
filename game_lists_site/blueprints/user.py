@@ -1,8 +1,11 @@
 import datetime as dt
+import json
 
 from flask import Blueprint, abort, jsonify, render_template
 from flask_peewee.utils import get_object_or_404, object_list
+from sklearn.metrics.pairwise import cosine_similarity
 
+from game_lists_site.blueprints.games import update_game_statistics
 from game_lists_site.utils.steam import (
     get_profile,
     get_profile_apps,
@@ -10,7 +13,7 @@ from game_lists_site.utils.steam import (
 )
 from game_lists_site.utils.utils import delta_gt
 
-from ..models import Game, GameStatistics, Status, User, UserGame
+from ..models import Game, GameStatistics, Simularity, Status, User, UserGame
 
 bp = Blueprint('user', __name__, url_prefix='/user')
 
@@ -30,6 +33,24 @@ def user(username: str):
                                steam_profile=steam_profile, steam_profile_apps=steam_profile_apps)
     else:
         return abort(404)
+
+
+def predict_score(user: User):
+    for user_game in UserGame.select().where(UserGame.user == user):
+        pt = user_game.steam_playtime + user_game.other_playtime
+        game_statistics = GameStatistics.get_or_none(
+            GameStatistics.game == user_game.game)
+        if game_statistics:
+            median_pt = game_statistics.median_playtime
+            if pt > median_pt:
+                pt = (pt - median_pt) / (median_pt * 3 - median_pt)
+                pt = pt * (1 - 0) + 0
+                user_game.predicted_score = min(pt, 1)
+            else:
+                pt = (pt - 0) / (median_pt - 0)
+                pt = pt * (0 + 1) + -1
+                user_game.predicted_score = pt
+            user_game.save()
 
 
 @bp.route('/<username>/games')
@@ -58,31 +79,57 @@ def games(username: str):
                     user_game.save()
             user.last_games_update_time = dt.datetime.now()
             user.save()
-    # Update predict score start
-    for user_game in UserGame.select().where(UserGame.user == user):
-        pt = user_game.steam_playtime + user_game.other_playtime
-        game_statistics = GameStatistics.get_or_none(
-            GameStatistics.game == user_game.game)
-        if game_statistics:
-            median_pt = game_statistics.median_playtime
-            if pt > median_pt:
-                pt = (pt - median_pt) / (median_pt * 3 - median_pt)
-                pt = pt * (1 - 0) + 0
-                user_game.predicted_score = min(pt, 1)
-            else:
-                pt = (pt - 0) / (median_pt - 0)
-                pt = pt * (0 + 1) + -1
-                user_game.predicted_score = pt
-            user_game.save()
-    # Update predict score end
+    predict_score(user)
     user_games = UserGame.select().where(
         UserGame.user == user).order_by(UserGame.steam_playtime.desc())
     return object_list('user/games.html', user_games, username=username, paginate_by=40)
 
 
+def update_simularity():
+    users = User.select()
+    game_statistics = GameStatistics.select()
+    user_vecs = []
+    for i, user in enumerate(users):
+        print(i)
+        predict_score(user)
+        user_vec = []
+        user_games = UserGame.select().where(UserGame.user == user)
+        for game_statistic in game_statistics:
+            # user_game = UserGame.get_or_none(
+            # UserGame.user == user, UserGame.game == game_statistic.game)
+            score = 0
+            for ug in user_games:
+                if ug.game == game_statistic.game:
+                    score = ug.predicted_score
+            #score = user_game.predicted_score if user_game else 0
+            user_vec.append(score)
+        user_vecs.append(user_vec)
+    user_vecs = cosine_similarity(user_vecs)
+    for user, user_vec in zip(users, user_vecs):
+        result = {}
+        for u, sim in zip(users, user_vec):
+            result[u.id] = sim
+        simularity = Simularity.get_or_none(user=user)
+        if simularity:
+            simularity.delete_instance()
+        Simularity.create(user=user, simularities=json.dumps(result))
+
+
 @bp.route('/<username>/recommendations')
 def recommendations(username: str):
-    return render_template('user/recommendations.html', username=username)
+    # update_simularity()
+    user = get_object_or_404(User, User.username == username)
+    simularities = json.loads(Simularity.get_or_none(
+        Simularity.user == user).simularities)
+    result = {}
+    simularities = dict(sorted(simularities.items(),
+                        key=lambda item: item[1], reverse=True))
+    for key in simularities:
+        user = User.get_by_id(key)
+        user_games = UserGame.select().where(UserGame.user == user)
+        if len(user_games) >= 10:
+            result[User.get_by_id(key)] = simularities[key]
+    return render_template('user/recommendations.html', username=username, simularities=result)
 
 
 @bp.route('/<username>/statistics')

@@ -1,3 +1,20 @@
 {% extends 'user/user_base.html' %}
 
 {% block section %} recommendations{% endblock %}
+
+
+
+{% block user_content %}
+<table>
+    <tr>
+        <th>User ID</th>
+        <th>Simularities</th>
+    </tr>
+    {% for sim in simularities %}
+    <tr>
+        <td><a href="{{url_for('user.user', username=sim.username)}}">{{sim.username}}</td>
+        <td>{{simularities[sim]}}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

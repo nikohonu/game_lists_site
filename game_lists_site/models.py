@@ -126,5 +126,11 @@ class UserGame(BaseModel):
         primary_key = CompositeKey('user', 'game')
 
 
+class Simularity(BaseModel):
+    user = ForeignKeyField(
+        User, on_delete='CASCADE', backref='users_game', primary_key=True)
+    simularities = TextField()
+
+
 models = BaseModel.__subclasses__()
 db.create_tables(models)

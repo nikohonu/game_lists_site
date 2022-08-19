@@ -56,7 +56,7 @@ def get_profile(profile_id):
             profile.url = result['profileurl']
             profile.avatar_url = result['avatarfull']
             profile.time_created = dt.datetime.fromtimestamp(
-                result['timecreated'])
+                result['timecreated']) if 'timecreated' in result else dt.datetime.now()
             profile.last_update_time = dt.datetime.now()
             profile.save()
     return profile
