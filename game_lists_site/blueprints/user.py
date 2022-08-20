@@ -105,13 +105,11 @@ def update_simularity():
         user_vec = []
         user_games = UserGame.select().where(UserGame.user == user)
         for game_statistic in game_statistics:
-            # user_game = UserGame.get_or_none(
-            # UserGame.user == user, UserGame.game == game_statistic.game)
             score = 0
             for ug in user_games:
                 if ug.game == game_statistic.game:
                     score = ug.predicted_score
-            #score = user_game.predicted_score if user_game else 0
+            score = score if score > 0 else 0
             user_vec.append(score)
         user_vecs.append(user_vec)
     user_vecs = cosine_similarity(user_vecs)
@@ -132,22 +130,48 @@ def recommendations(username: str):
         threading.Thread(target=update_simularity).start()
         last_update.date_time_value = dt.datetime.now()
         last_update.save()
+    # get user
     user = get_object_or_404(User, User.username == username)
+    # similar users
     simularities = json.loads(Simularity.get_or_none(
         Simularity.user == user).simularities)
+    similar_users = dict(sorted(simularities.items(),
+                                key=lambda item: item[1], reverse=True))
     result = {}
-    simularities = dict(sorted(simularities.items(),
-                        key=lambda item: item[1], reverse=True))
-    for i, key in enumerate(simularities):
+    for i, key in enumerate(similar_users):
         if i == 0:
             continue
-        user = User.get_by_id(key)
         result[User.get_by_id(key)] = simularities[key]
-        if i >= 10:
+        if i >= 20:
             break
-    return render_template('user/recommendations.html', username=username, simularities=result)
+    similar_users = result
+    # recommendations
+    games = set(
+        [user_game.game for user_game in UserGame.select().where(UserGame.user == user)])
+    new_games = dict()
+    for similar_user in similar_users:
+        for user_game in UserGame.select().where(UserGame.user == similar_user):
+            game = user_game.game
+            if game not in games and user_game.predicted_score:
+                if game in new_games:
+                    new_games[game]['total'] += user_game.predicted_score * \
+                        similar_users[similar_user]
+                    new_games[game]['count'] += 1
+                else:
+                    new_games[game] = {
+                        'total': user_game.predicted_score * similar_users[similar_user],
+                        'count': 1,
+                    }
+    recommendations = {}
+    for game in new_games:
+        if new_games[game]['count'] > 1:
+            recommendations[game] = {'result': new_games[game]['total'] /
+                                     new_games[game]['count'], 'count': new_games[game]['count']}
+    recommendations = dict(
+        sorted(recommendations.items(), key=lambda item: item[1]['result'], reverse=True)[:20])
+    return render_template('user/recommendations.html', username=username, similar_users=similar_users, recommendations=recommendations)
 
 
-@bp.route('/<username>/statistics')
+@ bp.route('/<username>/statistics')
 def statistics(username: str):
     return render_template('user/statistics.html', username=username)

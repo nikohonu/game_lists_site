@@ -5,16 +5,31 @@
 
 
 {% block user_content %}
-<h1> Simular users</h1>
+<h1>Simular users</h1>
 <table>
     <tr>
         <th>User</th>
         <th>Simularity</th>
     </tr>
-    {% for sim in simularities %}
+    {% for similar_user in similar_users %}
     <tr>
-        <td><a href="{{url_for('user.user', username=sim.username)}}">{{sim.username}}</td>
-        <td>{{simularities[sim]}}</td>
+        <td><a href="{{url_for('user.user', username=similar_user.username)}}">{{similar_user.username}}</td>
+        <td>{{(similar_users[similar_user]*1000)|round/1000}}</td>
+    </tr>
+    {% endfor %}
+</table>
+<h1>Recommendations</h1>
+<table>
+    <tr>
+        <th>Game</th>
+        <th>Value</th>
+        <th>Count</th>
+    </tr>
+    {% for r in recommendations %}
+    <tr>
+        <td>{{r.steam_app.name}}</td>
+        <td>{{(recommendations[r]['result']*1000)|round/1000}}</td>
+        <td>{{recommendations[r]['count']}}</td>
     </tr>
     {% endfor %}
 </table>

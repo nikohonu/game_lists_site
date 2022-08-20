@@ -48,7 +48,10 @@ def get_profile(profile_id):
         })
         print(result.text)
         result = result.json()
-        result = result['response']['players'][0]
+        if len(result['response']['players']) >= 1:
+            result = result['response']['players'][0]
+        else:
+            result = None
         if result:
             profile, _ = SteamProfile.get_or_create(id=profile_id)
             profile.is_public = result['communityvisibilitystate'] == 3
