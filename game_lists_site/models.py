@@ -1,22 +1,10 @@
 import datetime as dt
-from ast import Mod
 from pathlib import Path
 
 from appdirs import user_data_dir
-from peewee import (
-    AutoField,
-    BigIntegerField,
-    BooleanField,
-    CompositeKey,
-    DateField,
-    DateTimeField,
-    FloatField,
-    ForeignKeyField,
-    IntegerField,
-    Model,
-    SqliteDatabase,
-    TextField,
-)
+from peewee import (AutoField, BigIntegerField, BooleanField, CompositeKey,
+                    DateField, DateTimeField, FloatField, ForeignKeyField,
+                    IntegerField, Model, SqliteDatabase, TextField)
 
 user_data_dir = Path(user_data_dir(
     appauthor='Niko Honue', appname='game_lists_site'))
@@ -130,6 +118,12 @@ class Simularity(BaseModel):
     user = ForeignKeyField(
         User, on_delete='CASCADE', backref='users_game', primary_key=True)
     simularities = TextField()
+
+
+class GameSimilarities(BaseModel):
+    game = ForeignKeyField(Game, on_delete='CASCADE',
+                           backref='similarities', primary_key=True)
+    similarities = TextField()
 
 
 models = BaseModel.__subclasses__()

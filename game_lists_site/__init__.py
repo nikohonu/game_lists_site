@@ -1,12 +1,8 @@
-import atexit
 import os
 from pathlib import Path
 
 import appdirs
-from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask
-
-from game_lists_site.blueprints.games import update_game_statistics
 
 user_data_dir = Path(appdirs.user_data_dir(
     appauthor='Niko Honue', appname='game_lists_site'))
@@ -46,14 +42,11 @@ def create_app(test_config=None):
     import game_lists_site.blueprints.games as games
     app.register_blueprint(games.bp)
 
+    import game_lists_site.blueprints.game as game
+    app.register_blueprint(game.bp)
+
     import game_lists_site.blueprints.index as index
     app.register_blueprint(index.bp)
     app.add_url_rule('/', endpoint='index')
-
-    # cron start
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(update_game_statistics, trigger='interval', hours=1)
-    scheduler.start()
-    # cron end
 
     return app

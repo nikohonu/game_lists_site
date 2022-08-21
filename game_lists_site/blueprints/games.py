@@ -5,7 +5,8 @@ import numpy as np
 from flask import Blueprint
 from flask_peewee.utils import object_list
 
-from game_lists_site.models import Game, GameStatistics, SteamProfileApp, System
+from game_lists_site.models import (Game, GameStatistics, SteamProfileApp,
+                                    System)
 from game_lists_site.utils.utils import delta_gt
 
 bp = Blueprint('games', __name__, url_prefix='/games')

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block header %}
+<div class="sub-header">
+    <div class="block">
+        <h1>{% block title %}{{ game.steam_app.name }}{% block section %}{% endblock %}{% endblock %}</h1>
+    </div>
+</div>
+{% endblock %}
+{% block content %}
+<h1>Simular games</h1>
+<table>
+    <tr>
+        <th>Game</th>
+        <th>Similarity</th>
+    </tr>
+    {% for s in similarities%}
+    <tr>
+        <td><a href="{{url_for('game.game', game_id = s, game_name = s.steam_app.name)}}">{{s.steam_app.name}}</td>
+        <td>{{(similarities[s]*1000)|round/1000}}</td>
+    </tr>
+    {% endfor %}
+</table>
+{{result}}
+{% endblock %}

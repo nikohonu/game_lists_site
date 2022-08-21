@@ -18,7 +18,7 @@
     {% for ug in object_list %}
     <tr>
         <td>{{ug.game.id}}</td>
-        <td>{{ug.game.steam_app.name}}</td>
+        <td><a href="{{url_for('game.game', game_id = ug.game.id, game_name = ug.game.steam_app.name)}}">{{ug.game.steam_app.name}}</td>
         <td>{{ug.status.name}}</td>
         <td>{{(ug.steam_playtime/60)|round|int}}</td>
         <td>{{(ug.other_playtime/60)|round|int}}</td>
