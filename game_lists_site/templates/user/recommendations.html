@@ -1,19 +1,23 @@
 {% extends 'user/user_base.html' %}
 {% block section %} recommendations{% endblock %}
 {% block user_content %}
-<h1>Simular users</h1>
+{% if similarities is not none %}   
+<h1>Similar users</h1>
 <table>
     <tr>
         <th>User</th>
-        <th>Simularity</th>
+        <th>Similarity</th>
     </tr>
-    {% for similar_user in similar_users %}
+    {% for s in similarities %}
     <tr>
-        <td><a href="{{url_for('user.user', username=similar_user.username)}}">{{similar_user.username}}</td>
-        <td>{{(similar_users[similar_user]*1000)|round/1000}}</td>
+        <td><a href="{{url_for('user.user', username=s.username)}}">{{s.username}}</td>
+        <td>{{(similarities[s]*1000)|round/1000}}</td>
     </tr>
     {% endfor %}
 </table>
+{% else %}
+    There is not similar users
+{% endif %}
 <h1>Recommendations</h1>
 <table>
     <tr>
@@ -23,7 +27,7 @@
     </tr>
     {% for r in recommendations %}
     <tr>
-        <td>{{r.steam_app.name}}</td>
+        <td><a href="{{url_for('game.game', game_id = r.id, game_name = r.steam_app.name)}}">{{r.steam_app.name}}</td>
         <td>{{(recommendations[r]['result']*1000)|round/1000}}</td>
         <td>{{recommendations[r]['count']}}</td>
     </tr>

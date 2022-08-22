@@ -126,5 +126,17 @@ class GameSimilarities(BaseModel):
     similarities = TextField()
 
 
+class UserSimilarities(BaseModel):
+    user = ForeignKeyField(User, on_delete='CASCADE',
+                           backref='similarities', primary_key=True)
+    similarities = TextField()
+
+
+class UserPredictedScore(BaseModel):
+    user = ForeignKeyField(User, on_delete='CASCADE',
+                           backref='similarities', primary_key=True)
+    scores = TextField()
+
+
 models = BaseModel.__subclasses__()
 db.create_tables(models)
