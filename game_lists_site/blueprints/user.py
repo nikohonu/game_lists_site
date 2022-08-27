@@ -2,6 +2,7 @@ import datetime as dt
 import json
 import threading
 
+import flask
 import numpy as np
 from flask import Blueprint, abort, render_template
 from flask_peewee.utils import get_object_or_404, object_list
@@ -9,7 +10,7 @@ from sklearn import preprocessing
 from sklearn.metrics.pairwise import cosine_similarity
 
 from game_lists_site.models import (Game, Status, System, User, UserGame,
-                                    UserSimilarities)
+                                    UserNormalizedPlaytime, UserSimilarities)
 from game_lists_site.utils.steam import (get_profile, get_profile_apps,
                                          predict_start_date)
 from game_lists_site.utils.utils import delta_gt
@@ -34,8 +35,11 @@ def user(username: str):
         return abort(404)
 
 
-@bp.route('/<username>/games')
+@bp.route('/<username>/games', methods=['GET', 'POST'])
 def games(username: str):
+    if flask.request.method == 'POST':
+        print(flask.request.data)
+        return flask.jsonify({'test': 'test'})
     user = get_object_or_404(User, User.username == username)
     status = Status.get_or_none(Status.id == 1)
     if not status:
@@ -66,7 +70,8 @@ def games(username: str):
 
 
 def update_user_similarities():
-    games = Game.select()
+    games = [game for game in Game.select() if len(
+        UserGame.select().where(UserGame.game == game)) >= 5]
     users = [user for user in User.select() if len(
         UserGame.select().where(UserGame.user == user)) >= 10]
     game_vecs = []
@@ -80,6 +85,16 @@ def update_user_similarities():
         game_vecs.append(preprocessing.normalize([list(game_vec.values())])[0])
     game_vecs = np.array(game_vecs, dtype=np.float32)
     user_vecs = np.flip(np.rot90(game_vecs), 0)
+    for user, user_vec in zip(users, user_vecs):
+        user_normalized_playtime = UserNormalizedPlaytime.get_or_none(
+            UserNormalizedPlaytime.user == user)
+        if user_normalized_playtime:
+            user_normalized_playtime.normalized_playtimes = json.dumps(
+                {g.id: float(v) for v, g in zip(user_vec, games)})
+            user_normalized_playtime.save()
+        else:
+            user_normalized_playtime = UserNormalizedPlaytime.create(
+                user=user, normalized_playtimes=json.dumps({g.id: float(v) for v, g in zip(user_vec, games)}))
     user_vecs = cosine_similarity(user_vecs)
     for user, user_vec in zip(users, user_vecs):
         result = {}
@@ -110,18 +125,24 @@ def recommendations(username: str):
         [user_game.game for user_game in UserGame.select().where(UserGame.user == user)])
     new_games = dict()
     for u in similarities:
-        for user_game in UserGame.select().where(UserGame.user == u):
-            game = user_game.game
-            if game not in games:
-                if game in new_games:
-                    new_games[game]['total'] += (user_game.steam_playtime +
-                                                 user_game.other_playtime) * similarities[u]
-                    new_games[game]['count'] += 1
-                else:
-                    new_games[game] = {
-                        'total': user_game.predicted_score * similarities[u],
-                        'count': 1,
-                    }
+        normalized_playtimes = UserNormalizedPlaytime.get_or_none(
+            UserNormalizedPlaytime.user == u)
+        if normalized_playtimes:
+            normalized_playtimes = {int(key): value for key, value in json.loads(
+                normalized_playtimes.normalized_playtimes).items()}
+            for user_game in UserGame.select().where(UserGame.user == u):
+                game = user_game.game
+                if game.id in normalized_playtimes:
+                    if game not in games:
+                        if game in new_games:
+                            new_games[game]['total'] += normalized_playtimes[game.id] * \
+                                similarities[u]
+                            new_games[game]['count'] += 1
+                        else:
+                            new_games[game] = {
+                                'total': normalized_playtimes[game.id] * similarities[u],
+                                'count': 1,
+                            }
     recommendations = {}
     for game in new_games:
         if new_games[game]['count'] > 1 and new_games[game]['count'] <= 5:
@@ -132,6 +153,6 @@ def recommendations(username: str):
     return render_template('user/recommendations.html', username=username, similarities=similarities, recommendations=recommendations)
 
 
-@ bp.route('/<username>/statistics')
+@bp.route('/<username>/statistics')
 def statistics(username: str):
     return render_template('user/statistics.html', username=username)

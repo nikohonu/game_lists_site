@@ -13,6 +13,7 @@
         <th>Total playtime</th>
         <th>Dates</th>
         <th>Completions</th>
+        <th>Score</th>
     </tr>
     {% for ug in object_list %}
     <tr>
@@ -24,9 +25,32 @@
         <td>{{((ug.steam_playtime + ug.other_playtime)/60)|round|int}}</td>
         <td>{{ug.start_date}}<br>{{ug.end_date}}</td>
         <td>{{ug.completions}}</td>
+        <!-- {{ug.score}} -->
+        <td><input type="number" id="{{ug.game.id}}" class="score" min="0" max="5" value="0"></td>
     </tr>
     {% endfor %}
 </table>
+<script>
+var nodes = document.getElementsByClassName("score");
+for (let i = 0; i < nodes.length; i++) {
+    var url = {{ url_for("user.games", username = username)|tojson }}
+    let data = {
+        "id": nodes[i].id,
+        "score": nodes[i].value,
+    }
+    nodes[i].addEventListener('change', () => {
+        fetch(url, {
+            "method": "POST",
+            "headers": {"Content-Type": "application/json"},
+            "body": JSON.stringify(data),
+        }).then((response) => response.json()).then(
+            (data) => {
+                console.log(data)
+            }
+        )
+    })
+}
+</script>
 {% if page > 1 %}
 <a href="?page={{ page - 1 }}">Prev</a>
 {% endif %}

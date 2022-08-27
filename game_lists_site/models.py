@@ -106,7 +106,6 @@ class UserGame(BaseModel):
     other_playtime = IntegerField(default=0)
     start_date = DateField(null=True)
     end_date = DateField(null=True)
-    predicted_score = FloatField(null=True)
     score = IntegerField(null=True)
     completions = IntegerField(default=0)
 
@@ -132,10 +131,10 @@ class UserSimilarities(BaseModel):
     similarities = TextField()
 
 
-class UserPredictedScore(BaseModel):
+class UserNormalizedPlaytime(BaseModel):
     user = ForeignKeyField(User, on_delete='CASCADE',
-                           backref='similarities', primary_key=True)
-    scores = TextField()
+                           backref='normalized_playtimes', primary_key=True)
+    normalized_playtimes = TextField()
 
 
 models = BaseModel.__subclasses__()

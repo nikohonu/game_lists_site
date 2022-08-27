@@ -55,5 +55,5 @@ def game(game_id, game_name):
         similarities = {Game.get_by_id(key): value for key, value in json.loads(
             similarities.similarities).items()}
     similarities = dict(sorted(similarities.items(),
-                        key=lambda item: item[1], reverse=True)[:11])
+                        key=lambda item: item[1], reverse=True)[1:11])
     return render_template('game.html', game=game, similarities=similarities)
