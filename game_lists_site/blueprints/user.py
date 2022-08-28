@@ -1,15 +1,16 @@
 import datetime as dt
 import json
 import threading
+from unittest import result
 
 import flask
 import numpy as np
-from flask import Blueprint, abort, render_template
+from flask import Blueprint, abort, render_template, request
 from flask_peewee.utils import get_object_or_404, object_list
 from sklearn import preprocessing
 from sklearn.metrics.pairwise import cosine_similarity
 
-from game_lists_site.models import (Game, Status, System, User, UserGame,
+from game_lists_site.models import (Game, GameSimilarities, Status, SteamApp, System, User, UserGame,
                                     UserNormalizedPlaytime, UserSimilarities)
 from game_lists_site.utils.steam import (get_profile, get_profile_apps,
                                          predict_start_date)
@@ -38,8 +39,20 @@ def user(username: str):
 @bp.route('/<username>/games', methods=['GET', 'POST'])
 def games(username: str):
     if flask.request.method == 'POST':
-        print(flask.request.data)
-        return flask.jsonify({'test': 'test'})
+        data = json.loads(request.data.decode("utf-8"))
+        if 'id' in data and 'score' in data:
+            id = int(data['id'])
+            user = get_object_or_404(User, User.username == username)
+            game = get_object_or_404(Game, Game.id == id)
+            score = max(min(int(data['score']), 10), 0) if data['score'] else 0
+            ug = UserGame.get_or_none(
+                UserGame.user == user, UserGame.game == game)
+            ug.score = score
+            ug.save()
+            return flask.jsonify({"id": id, "score": score})
+    sort = request.args.get('sort')
+    if not sort:
+        sort = 'playtime'
     user = get_object_or_404(User, User.username == username)
     status = Status.get_or_none(Status.id == 1)
     if not status:
@@ -64,9 +77,16 @@ def games(username: str):
                     user_game.save()
             user.last_games_update_time = dt.datetime.now()
             user.save()
-    user_games = UserGame.select().where(
-        UserGame.user == user).order_by(UserGame.steam_playtime.desc())
-    return object_list('user/games.html', user_games, username=username, paginate_by=40)
+    if sort == 'playtime':
+        user_games = UserGame.select().where(
+            UserGame.user == user).order_by(UserGame.steam_playtime.desc())
+    if sort == 'score':
+        user_games = UserGame.select().where(
+            UserGame.user == user).order_by(UserGame.score.desc())
+    if sort == 'name':
+        user_games = UserGame.select().join(Game).join(SteamApp).where(
+            UserGame.user == user).order_by(SteamApp.name)
+    return object_list('user/games.html', user_games, username=username, paginate_by=40, sort=sort)
 
 
 def update_user_similarities():
@@ -115,32 +135,33 @@ def recommendations(username: str):
         last_update.date_time_value = dt.datetime.now()
         last_update.save()
     user = get_object_or_404(User, User.username == username)
-    similarities = UserSimilarities.get_or_none(UserSimilarities.user == user)
-    if similarities:
-        similarities = {User.get_by_id(key): value for key, value in json.loads(
-            similarities.similarities).items()}
-        similarities = dict(sorted(similarities.items(),
-                                   key=lambda item: item[1], reverse=True)[1:11])
-    games = set(
-        [user_game.game for user_game in UserGame.select().where(UserGame.user == user)])
+    # recommendations based on playtime
+    similar_users = UserSimilarities.get_or_none(UserSimilarities.user == user)
+    if similar_users:
+        similar_users = {User.get_by_id(key): value for key, value in json.loads(
+            similar_users.similarities).items()}
+        similar_users = dict(sorted(similar_users.items(),
+                                    key=lambda item: item[1], reverse=True)[1:11])
+    games = [user_game.game for user_game in UserGame.select().where(
+        UserGame.user == user)]
     new_games = dict()
-    for u in similarities:
+    for similar_user in similar_users:
         normalized_playtimes = UserNormalizedPlaytime.get_or_none(
-            UserNormalizedPlaytime.user == u)
+            UserNormalizedPlaytime.user == similar_user)
         if normalized_playtimes:
             normalized_playtimes = {int(key): value for key, value in json.loads(
                 normalized_playtimes.normalized_playtimes).items()}
-            for user_game in UserGame.select().where(UserGame.user == u):
+            for user_game in UserGame.select().where(UserGame.user == similar_user):
                 game = user_game.game
                 if game.id in normalized_playtimes:
                     if game not in games:
                         if game in new_games:
                             new_games[game]['total'] += normalized_playtimes[game.id] * \
-                                similarities[u]
+                                similar_users[similar_user]
                             new_games[game]['count'] += 1
                         else:
                             new_games[game] = {
-                                'total': normalized_playtimes[game.id] * similarities[u],
+                                'total': normalized_playtimes[game.id] * similar_users[similar_user],
                                 'count': 1,
                             }
     recommendations = {}
@@ -150,7 +171,32 @@ def recommendations(username: str):
                                      new_games[game]['count'], 'count': new_games[game]['count']}
     recommendations = dict(
         sorted(recommendations.items(), key=lambda item: item[1]['result'], reverse=True)[:10])
-    return render_template('user/recommendations.html', username=username, similarities=similarities, recommendations=recommendations)
+    # recommendations based on score
+    games = {game.id: game for game in Game.select()}
+    played_games = {ug.game: ug.score for ug in UserGame.select().where(
+        UserGame.user == user)}2
+    recommendations_by_score = {}
+    for game, score in played_games.items():
+        if score:
+            similarities = GameSimilarities.get_or_none(game=game)
+            if similarities:
+                similarities = json.loads(similarities.similarities)
+                for s in similarities:
+                    if int(s) in recommendations_by_score:
+                        recommendations_by_score[int(
+                            s)] += similarities[s] * score
+                    else:
+                        recommendations_by_score[int(
+                            s)] = similarities[s] * score
+    recommendations_by_score = {
+        games[key]: value for key, value in recommendations_by_score.items()}
+    recommendations_by_score = {
+        game: score for game, score in recommendations_by_score.items() if game not in played_games}
+    recommendations_by_score = dict(
+        sorted(recommendations_by_score.items(), key=lambda item: item[1], reverse=True)[:10])
+    # print(recommendations_by_score)
+    # print(played_games)
+    return render_template('user/recommendations.html', username=username, similarities=similar_users, recommendations=recommendations, recommendations_by_score=recommendations_by_score)
 
 
 @bp.route('/<username>/statistics')

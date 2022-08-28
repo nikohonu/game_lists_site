@@ -40,7 +40,7 @@ def update_game_similarities():
         if similarities:
             similarities.delete_instance(recursive=True)
         GameSimilarities.create(game=game, similarities=json.dumps(result))
-
+    print('ok')
 
 @bp.route('<game_id>/<game_name>')
 def game(game_id, game_name):

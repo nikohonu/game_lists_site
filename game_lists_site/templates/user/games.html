@@ -3,6 +3,23 @@
 {% block section %} games{% endblock %}
 
 {% block user_content %}
+<form action="{{ url_for("user.games", username = username) }}">
+<label for="sort">Sort by:</label>
+<select name="sort" id="sort"  onchange="this.form.submit()">
+    <option value="playtime">Playtime</option>
+    {% if sort == 'score' %}
+    <option value="score" selected>Score</option>
+    {% else %}
+    <option value="score">Score</option>
+    {% endif %}
+    {% if sort == 'name' %}
+    <option value="name" selected>Name</option>
+    {% else %}
+    <option value="name">Name</option>
+    {% endif %}
+
+</select>
+</form>
 <table>
     <tr>
         <th>ID</th>
@@ -25,8 +42,7 @@
         <td>{{((ug.steam_playtime + ug.other_playtime)/60)|round|int}}</td>
         <td>{{ug.start_date}}<br>{{ug.end_date}}</td>
         <td>{{ug.completions}}</td>
-        <!-- {{ug.score}} -->
-        <td><input type="number" id="{{ug.game.id}}" class="score" min="0" max="5" value="0"></td>
+        <td><input type="number" id="{{ug.game.id}}" class="score" min="0" max="10" value="{{ug.score}}"></td>
     </tr>
     {% endfor %}
 </table>
@@ -34,11 +50,11 @@
 var nodes = document.getElementsByClassName("score");
 for (let i = 0; i < nodes.length; i++) {
     var url = {{ url_for("user.games", username = username)|tojson }}
-    let data = {
-        "id": nodes[i].id,
-        "score": nodes[i].value,
-    }
     nodes[i].addEventListener('change', () => {
+        let data = {
+            "id": nodes[i].id,
+            "score": nodes[i].value,
+        }
         fetch(url, {
             "method": "POST",
             "headers": {"Content-Type": "application/json"},
@@ -46,6 +62,7 @@ for (let i = 0; i < nodes.length; i++) {
         }).then((response) => response.json()).then(
             (data) => {
                 console.log(data)
+                nodes[i].value = data.score
             }
         )
     })

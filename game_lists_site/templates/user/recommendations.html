@@ -33,4 +33,17 @@
     </tr>
     {% endfor %}
 </table>
+<h1>Recommendations by score</h1>
+<table>
+    <tr>
+        <th>Game</th>
+        <th>Value</th>
+    </tr>
+    {% for r in recommendations_by_score %}
+    <tr>
+        <td><a href="{{url_for('game.game', game_id = r.id, game_name = r.steam_app.name)}}">{{r.steam_app.name}}</td>
+        <td>{{(recommendations_by_score[r]*1000)|round/1000}}</td>
+    </tr>
+    {% endfor %}
+</table>
 {% endblock %}
