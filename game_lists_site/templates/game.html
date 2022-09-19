@@ -2,10 +2,58 @@
 {% block header %}
 <div class="sub-header">
     <div class="block">
-        <h1>{% block title %}{{ game.steam_app.name }}{% block section %}{% endblock %}{% endblock %}</h1>
+        <h1>{% block title %}{{ game.name }}{% block section %}{% endblock %}{% endblock %}</h1>
     </div>
 </div>
 {% endblock %}
+{% block content %}
+<div class="game">
+    <img src="{{game.image_url}}" alt="game image">
+    <div>
+        <b>Release date:</b> {{game.release_date}}
+        <br>
+        <b>Developer(s):</b>
+        {% for d in developers%}
+        <a href="">{{d}}</a>
+        {% endfor %}
+        <br>
+        <b>Genres:</b>
+        {% for g in genres%}
+        <a href="">{{g}}</a>
+        {% endfor %}
+        <br>
+        <b>Tags:</b>
+        {% for t in tags%}
+        <a href="">{{t}}</a>
+        {% endfor %}
+    </div>
+</div>
+<h2>Description</h2>
+<div class="description">
+    <div id="short">{{ short_description }}<a id="show-more" href="">...</a></div>
+    <div id="full">{{ game.description|safe }}<br><a id="show-less" href="">Show less</a></div>
+    <!-- {{ short_description|safe }} -->
+</div>
+<script>
+    window.onload = function () {
+        var more = document.getElementById("show-more");
+        var less = document.getElementById("show-less");
+        var short = document.getElementById("short");
+        var full = document.getElementById("full");
+        more.onclick = function () {
+            short.style.display = "none";
+            full.style.display = "block";
+            return false;
+        }
+        less.onclick = function () {
+            full.style.display = "none";
+            short.style.display = "block";
+            return false;
+        }
+    }
+</script>
+{% endblock %}
+{#
 {% block content %}
 <h1>Similar games</h1>
 <table>
@@ -22,3 +70,4 @@
 </table>
 {{result}}
 {% endblock %}
+#}

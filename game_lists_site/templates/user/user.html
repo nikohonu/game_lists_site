@@ -3,29 +3,12 @@
 {% block section %} overview{% endblock %}
 
 {% block user_content %}
-<h1 style='text-align:center'>Steam profile</h1>
-<div style='display: flex; align-items: center'>
-    <img src="{{steam_profile.avatar_url}}" alt="Steam avatar">
+<div id="profile">
+    <img src="{{user.avatar_url}}" alt="Steam avatar">
     <div>
-        <a href="{{steam_profile.url}}" style='display: block'>
-            <h1 style="display:inline">{{steam_profile.name}}</h1>
-        </a>
-        <a href="{{steam_profile.url}}">Steam ID: {{steam_profile.id}}</a>
+        <h1 style="display:inline">{{user.username}}</h1>
+        <br>
+        <a href="{{user.profile_url}}">Steam ID: {{user.id}}</a>
     </div>
-</div>
-<h2 style='text-align:center'>Game list</h2>
-<div>
-    <table>
-        <tr>
-            <th>Game</th>
-            <th>Playtime (minutes)</th>
-        </tr>
-        {% for steam_profile_app in steam_profile_apps %}
-        <tr>
-            <td>{{steam_profile_app.steam_app.name}}</td>
-            <td>{{steam_profile_app.playtime}}</td>
-        </tr>
-        {% endfor %}
-    </table>
 </div>
 {% endblock %}

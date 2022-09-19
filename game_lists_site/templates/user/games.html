@@ -3,75 +3,46 @@
 {% block section %} games{% endblock %}
 
 {% block user_content %}
-<form action="{{ url_for("user.games", username = username) }}">
-<label for="sort">Sort by:</label>
-<select name="sort" id="sort"  onchange="this.form.submit()">
-    <option value="playtime">Playtime</option>
-    {% if sort == 'score' %}
-    <option value="score" selected>Score</option>
-    {% else %}
-    <option value="score">Score</option>
-    {% endif %}
-    {% if sort == 'name' %}
-    <option value="name" selected>Name</option>
-    {% else %}
-    <option value="name">Name</option>
-    {% endif %}
-
-</select>
-</form>
 <table>
     <tr>
         <th>ID</th>
+        <th>Image</th>
         <th>Game</th>
-        <th>Status</th>
-        <th>Steam playtime</th>
-        <th>Other playtime</th>
-        <th>Total playtime</th>
-        <th>Dates</th>
-        <th>Completions</th>
+        <th>Playtime</th>
+        <th>Last played</th>
         <th>Score</th>
     </tr>
-    {% for ug in object_list %}
+    {% for ug in user_games %}
     <tr>
         <td>{{ug.game.id}}</td>
-        <td><a href="{{url_for('game.game', game_id = ug.game.id, game_name = ug.game.steam_app.name)}}">{{ug.game.steam_app.name}}</td>
-        <td>{{ug.status.name}}</td>
-        <td>{{(ug.steam_playtime/60)|round|int}}</td>
-        <td>{{(ug.other_playtime/60)|round|int}}</td>
-        <td>{{((ug.steam_playtime + ug.other_playtime)/60)|round|int}}</td>
-        <td>{{ug.start_date}}<br>{{ug.end_date}}</td>
-        <td>{{ug.completions}}</td>
+        <td><img src="{{ug.game.image_url}}" alt="" height="87"></td>
+        <td><a href="{{url_for('game.game', game_id = ug.game.id, game_name = ug.game.name)}}">{{ug.game.name}}</td>
+        <td>{{prettify_playtime(ug.playtime)}}</td>
+        <td>{{ug.last_played}}</td>
         <td><input type="number" id="{{ug.game.id}}" class="score" min="0" max="10" value="{{ug.score}}"></td>
     </tr>
     {% endfor %}
 </table>
 <script>
-var nodes = document.getElementsByClassName("score");
-for (let i = 0; i < nodes.length; i++) {
-    var url = {{ url_for("user.games", username = username)|tojson }}
-    nodes[i].addEventListener('change', () => {
-        let data = {
-            "id": nodes[i].id,
-            "score": nodes[i].value,
-        }
-        fetch(url, {
-            "method": "POST",
-            "headers": {"Content-Type": "application/json"},
-            "body": JSON.stringify(data),
-        }).then((response) => response.json()).then(
-            (data) => {
-                console.log(data)
-                nodes[i].value = data.score
+    var nodes = document.getElementsByClassName("score");
+    for (let i = 0; i < nodes.length; i++) {
+        var url = {{ url_for("user.games", username = user.username) | tojson}}
+        nodes[i].addEventListener('change', () => {
+            let data = {
+                "id": nodes[i].id,
+                "score": nodes[i].value,
             }
-        )
-    })
-}
+            fetch(url, {
+                "method": "POST",
+                "headers": { "Content-Type": "application/json" },
+                "body": JSON.stringify(data),
+            }).then((response) => response.json()).then(
+                (data) => {
+                    console.log(data)
+                    nodes[i].value = data.score
+                }
+            )
+        })
+    }
 </script>
-{% if page > 1 %}
-<a href="?page={{ page - 1 }}">Prev</a>
-{% endif %}
-{% if page < pagination.get_pages() %}
-<a href="?page={{ page + 1 }}">Next</a>
-{% endif %}
 {% endblock %}

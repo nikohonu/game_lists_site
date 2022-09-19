@@ -18,6 +18,19 @@ def create_app(test_config=None):
         DATABASE=str(database_dir),
     )
 
+    @app.context_processor
+    def utility_processor():
+        def prettify_playtime(minutes: int):
+            int_hours = int(minutes / 60.0)
+            rount_hours = round(minutes / 60.0)
+            if minutes < 60:
+                return f"{minutes}m"
+            elif int_hours <= 5:
+                return f"{int_hours}h {minutes - int_hours * 60}m"
+            else:
+                return f"{rount_hours}h"
+        return dict(prettify_playtime=prettify_playtime)
+
     if test_config is None:
         # ./instance/config.py
         app.config.from_pyfile('config.py')

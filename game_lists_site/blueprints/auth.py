@@ -1,20 +1,11 @@
 import functools
 
-from flask import (
-    Blueprint,
-    flash,
-    g,
-    jsonify,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
-)
+from flask import (Blueprint, flash, g, jsonify, redirect, render_template,
+                   request, session, url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import game_lists_site.utils.steam as steam
-from game_lists_site.models import SteamProfile, User
+from game_lists_site.models import User
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -25,7 +16,7 @@ def register():
         username = request.form['username']
         password = request.form['password']
         steam_profile_url = request.form['steam_profile_url']
-        steam_profile_id = steam.get_profile_id_from_url(
+        steam_id = steam.get_steam_id_from_url(
             steam_profile_url) if steam_profile_url else None
         error = None
         if not username:
@@ -34,20 +25,13 @@ def register():
             error = 'Password is required!'
         elif not steam_profile_url:
             error = 'Steam profile url is required!'
-        elif not steam_profile_id:
+        elif not steam_id:
             error = 'Invalid steam profile url!'
         if error is None:
-            # try:
-            steam_profile, _ = SteamProfile.get_or_create(id=steam_profile_id)
-            User.create(username=username, password=generate_password_hash(
-                password), steam_profile=steam_profile)
-            # except db.IntegrityError:
-            #     error = f"User {username} is already registered."
-            # else:
+            User.create(id=steam_id, username=username, password=generate_password_hash(
+                password))
             return redirect(url_for("auth.login"))
-
         flash(error)
-
     return render_template('auth/register.html')
 
 
@@ -58,48 +42,39 @@ def login():
         password = request.form['password']
         error = None
         user = User.get_or_none(username=username)
-
         if user is None:
             error = 'Incorrect username.'
-        # check_password_hash() hashes the submitted password in the same way as the stored and compares them
         elif not check_password_hash(user.password, password):
             error = 'Incorrect password.'
-
         if error is None:
-            session.clear()  # session is a dict that stores data across requests
+            session.clear()
             session['user_id'] = user.id
             return redirect(url_for('user.user', username=user.username))
-
         flash(error)
-
     return render_template('auth/login.html')
 
 
-@bp.route('/delete', methods=['POST'])
-def delete():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        error = None
-        user = User.get_or_none(username=username)
-
-        if user is None:
-            error = 'Incorrect username.'
-        elif not check_password_hash(user.password, password):
-            error = 'Incorrect password.'
-
-        if error is None:
-            user.steam_profile.delete_instance(recursive=True)
-            return jsonify(True)
-        flash(error)
-
-    return render_template('auth/login.html')
+# @bp.route('/delete', methods=['POST'])
+# def delete():
+#     if request.method == 'POST':
+#         username = request.form['username']
+#         password = request.form['password']
+#         error = None
+#         user = User.get_or_none(username=username)
+#         if user is None:
+#             error = 'Incorrect username.'
+#         elif not check_password_hash(user.password, password):
+#             error = 'Incorrect password.'
+#         if error is None:
+#             user.steam_profile.delete_instance(recursive=True)
+#             return jsonify(True)
+#         flash(error)
+#     return render_template('auth/login.html')
 
 
 @bp.before_app_request
 def load_logged_in_user():
     user_id = session.get('user_id')
-
     if user_id is None:
         g.user = None
     else:
@@ -112,14 +87,10 @@ def logout():
     return redirect(url_for('index'))
 
 
-# This function checks if a user is loaded and redirects to the login page otherwise
 def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
         if g.user is None:
-            # url_for() function generates teh URL to a view based on a name and arguments
             return redirect(url_for('auth.login'))
-
         return view(**kwargs)
-
     return wrapped_view

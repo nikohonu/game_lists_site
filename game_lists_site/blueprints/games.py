@@ -5,9 +5,9 @@ import numpy as np
 from flask import Blueprint
 from flask_peewee.utils import object_list
 
-from game_lists_site.models import (Game, GameStatistics, SteamProfileApp,
-                                    System)
-from game_lists_site.utils.utils import delta_gt
+# from game_lists_site.models import (Game, GameStatistics, SteamProfileApp,
+#                                     System)
+from game_lists_site.utils.utils import days_delta
 
 bp = Blueprint('games', __name__, url_prefix='/games')
 
@@ -34,7 +34,7 @@ def update_game_statistics():
 @bp.route('/')
 def games():
     last_update, _ = System.get_or_create(key='GameStatistics')
-    if not last_update.date_time_value or delta_gt(last_update.date_time_value, 1):
+    if not last_update.date_time_value or days_delta(last_update.date_time_value, 1):
         threading.Thread(target=update_game_statistics).start()
         last_update.date_time_value = datetime.now()
         last_update.save()

@@ -1,7 +1,7 @@
 {% extends 'user/user_base.html' %}
 {% block section %} recommendations{% endblock %}
 {% block user_content %}
-{% if similarities is not none %}   
+{% if similarities is not none %}
 <h1>Similar users</h1>
 <table>
     <tr>
@@ -16,7 +16,7 @@
     {% endfor %}
 </table>
 {% else %}
-    There is not similar users
+There is not similar users
 {% endif %}
 <h1>Recommendations by playtime</h1>
 <table>

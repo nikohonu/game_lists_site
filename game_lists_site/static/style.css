@@ -79,3 +79,29 @@ main {
 footer {
     background: var(--ctp-mocha-base);
 }
+
+/* /user/user.html */
+#profile {
+    display: flex;
+}
+
+/* /game/game.html */
+.description h1 {
+    font-size: 14pt;
+}
+
+.description h2 {
+    font-size: 14pt;
+}
+
+.description ul {
+    margin-bottom: 0;
+}
+
+.description #full {
+    display: none;
+}
+
+.game {
+    display: flex;
+}

@@ -2,7 +2,8 @@ from flask import Blueprint, abort, jsonify
 from flask_peewee.utils import get_object_or_404
 
 import game_lists_site.utils.steam as steam
-from game_lists_site.models import SteamProfile, User
+
+# from game_lists_site.models import SteamProfile, User
 
 bp = Blueprint('steam', __name__, url_prefix='/steam')
 
