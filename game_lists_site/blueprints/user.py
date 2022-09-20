@@ -17,8 +17,9 @@ import game_lists_site.utils.steam as steam
 from game_lists_site.models import Game, User, UserGame
 from game_lists_site.utils.utils import days_delta, get_game
 
-not_game_ids = [250820, 431960, 404790, 214850, 205790, 388080, 623990, 607380,
-                323370, 41010, 202090, 226320, 225140, 239450, 700580, 217490, 285030, 36700, 310380]
+not_game_ids = [202090, 205790, 214850, 217490, 225140, 226320, 239450, 250820,
+                285030, 310380, 323370, 36700, 388080, 404790, 41010, 431960,
+                607380, 623990, 700580]
 free_game_ids = [440, 570, 950670, 450390]
 
 bp = Blueprint('user', __name__, url_prefix='/user')

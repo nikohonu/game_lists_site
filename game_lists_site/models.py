@@ -87,10 +87,14 @@ class UserGame(BaseModel):
     class Meta:
         primary_key = CompositeKey('user', 'game')
 
-# class System(BaseModel):
-#     key = TextField(primary_key=True)
-#     date_time_value = DateTimeField(null=True)
+class System(BaseModel):
+    key = TextField(primary_key=True)
+    date_time_value = DateTimeField(null=True)
 
+
+class GameCBR(BaseModel):
+    game = ForeignKeyField(Game, on_delete='CASCADE', backref='game_statistics', primary_key=True)
+    data = TextField(null=True)
 
 # class SteamApp(BaseModel):
 #     id = BigIntegerField(primary_key=True)

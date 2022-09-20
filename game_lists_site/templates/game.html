@@ -34,6 +34,14 @@
     <div id="full">{{ game.description|safe }}<br><a id="show-less" href="">Show less</a></div>
     <!-- {{ short_description|safe }} -->
 </div>
+<h2>Content based recommendations for game</h2>
+<div>
+    {% for game in cbr_result %}
+    <a href="{{url_for('game.game', game_id = game.id, game_name = game.name)}}">
+        <img src="{{game.image_url}}" alt="" height="204">
+    </a>
+    {% endfor %}
+</div>
 <script>
     window.onload = function () {
         var more = document.getElementById("show-more");
