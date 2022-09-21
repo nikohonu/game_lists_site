@@ -37,8 +37,8 @@ def get_owned_games(steam_id: int):
 def get_app_details(app_id):
     print('call get_appdetails')
     data = requests.get(
-        "https://store.steampowered.com/api/appdetails?lang=en_US",
-        params={'appids': app_id}).json()
+        "https://store.steampowered.com/api/appdetails",
+        params={'appids': app_id, 'l': 'english'}).json()
     try:
         if 'data' not in data[list(data.keys())[0]]:
             print(app_id)

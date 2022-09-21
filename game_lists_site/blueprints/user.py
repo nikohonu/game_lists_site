@@ -15,7 +15,7 @@ import game_lists_site.utils.steam as steam
 # from game_lists_site.models import (Game, GameSimilarities, Status, Game, System, User, UserGame,
 #                                     UserNormalizedPlaytime, UserSimilarities)
 from game_lists_site.models import Game, User, UserGame
-from game_lists_site.utils.utils import days_delta, get_game
+from game_lists_site.utils.utils import days_delta, get_cbr_for_user, get_game
 
 not_game_ids = [202090, 205790, 214850, 217490, 225140, 226320, 239450, 250820,
                 285030, 310380, 323370, 36700, 388080, 404790, 41010, 431960,
@@ -49,7 +49,7 @@ def games(username: str):
             score = max(min(int(data['score']), 10), 0) if data['score'] else 0
             ug = get_object_or_404(UserGame, UserGame.user == user,
                                    UserGame.game == game)
-            ug.score = score
+            ug.score = score if score != 0 else None
             ug.save()
             return jsonify({"id": id, "score": score})
     user = get_object_or_404(User, User.username == username)
@@ -116,7 +116,9 @@ def games(username: str):
 
 @bp.route('/<username>/recommendations')
 def recommendations(username: str):
-    pass
+    user = get_object_or_404(User, User.username == username)
+    cbr_result = get_cbr_for_user(user, 18).keys()
+    return render_template('user/recommendations.html', user=user, cbr_result=cbr_result)
 #     last_update, _ = System.get_or_create(key='UserSimilarities')
 #     if not last_update.date_time_value or days_delta(last_update.date_time_value, 1):
 #         threading.Thread(target=update_user_similarities).start()
@@ -184,7 +186,6 @@ def recommendations(username: str):
 #         sorted(recommendations_by_score.items(), key=lambda item: item[1], reverse=True)[:10])
 #     # print(recommendations_by_score)
 #     # print(played_games)
-#     return render_template('user/recommendations.html', username=username, similarities=similar_users, recommendations=recommendations, recommendations_by_score=recommendations_by_score)
 
 
 @bp.route('/<username>/statistics')

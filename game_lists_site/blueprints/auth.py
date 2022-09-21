@@ -54,22 +54,22 @@ def login():
     return render_template('auth/login.html')
 
 
-# @bp.route('/delete', methods=['POST'])
-# def delete():
-#     if request.method == 'POST':
-#         username = request.form['username']
-#         password = request.form['password']
-#         error = None
-#         user = User.get_or_none(username=username)
-#         if user is None:
-#             error = 'Incorrect username.'
-#         elif not check_password_hash(user.password, password):
-#             error = 'Incorrect password.'
-#         if error is None:
-#             user.steam_profile.delete_instance(recursive=True)
-#             return jsonify(True)
-#         flash(error)
-#     return render_template('auth/login.html')
+@bp.route('/delete', methods=['POST'])
+def delete():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        error = None
+        user = User.get_or_none(username=username)
+        if user is None:
+            error = 'Incorrect username.'
+        elif not check_password_hash(user.password, password):
+            error = 'Incorrect password.'
+        if error is None:
+            user.delete()
+            return jsonify(True)
+        flash(error)
+    return render_template('auth/login.html')
 
 
 @bp.before_app_request

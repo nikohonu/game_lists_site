@@ -27,6 +27,7 @@ class User(BaseModel):
     profile_url = TextField(null=True)
     last_update_time = DateTimeField(null=True)
     last_games_update_time = DateTimeField(null=True)
+    last_cbr_update_time = DateTimeField(null=True)
 
 
 class Game(BaseModel):
@@ -93,7 +94,11 @@ class System(BaseModel):
 
 
 class GameCBR(BaseModel):
-    game = ForeignKeyField(Game, on_delete='CASCADE', backref='game_statistics', primary_key=True)
+    game = ForeignKeyField(Game, on_delete='CASCADE', primary_key=True)
+    data = TextField(null=True)
+
+class UserCBR(BaseModel):
+    user = ForeignKeyField(User, on_delete='CASCADE', primary_key=True)
     data = TextField(null=True)
 
 # class SteamApp(BaseModel):
