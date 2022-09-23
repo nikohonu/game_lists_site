@@ -83,10 +83,12 @@ class UserGame(BaseModel):
     game = ForeignKeyField(Game, on_delete='CASCADE')
     last_played = DateTimeField(null=True)
     playtime = IntegerField(default=0)
+    normalized_playtime = FloatField(default=0)
     score = IntegerField(null=True)
 
     class Meta:
         primary_key = CompositeKey('user', 'game')
+
 
 class System(BaseModel):
     key = TextField(primary_key=True)
@@ -97,9 +99,21 @@ class GameCBR(BaseModel):
     game = ForeignKeyField(Game, on_delete='CASCADE', primary_key=True)
     data = TextField(null=True)
 
+
 class UserCBR(BaseModel):
     user = ForeignKeyField(User, on_delete='CASCADE', primary_key=True)
     data = TextField(null=True)
+
+
+class UserMBCF(BaseModel):
+    user = ForeignKeyField(User, on_delete='CASCADE', primary_key=True)
+    data = TextField(null=True)
+
+
+class GameStats(BaseModel):
+    game = ForeignKeyField(Game, on_delete='CASCADE', primary_key=True)
+    player_count = IntegerField(null=True)
+    last_update_time = DateTimeField(null=True)
 
 # class SteamApp(BaseModel):
 #     id = BigIntegerField(primary_key=True)

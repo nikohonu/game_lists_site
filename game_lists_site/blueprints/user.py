@@ -15,7 +15,7 @@ import game_lists_site.utils.steam as steam
 # from game_lists_site.models import (Game, GameSimilarities, Status, Game, System, User, UserGame,
 #                                     UserNormalizedPlaytime, UserSimilarities)
 from game_lists_site.models import Game, User, UserGame
-from game_lists_site.utils.utils import days_delta, get_cbr_for_user, get_game
+from game_lists_site.utils.utils import days_delta, get_cbr_for_user, get_game, get_mbcf_for_user
 
 not_game_ids = [202090, 205790, 214850, 217490, 225140, 226320, 239450, 250820,
                 285030, 310380, 323370, 36700, 388080, 404790, 41010, 431960,
@@ -117,8 +117,9 @@ def games(username: str):
 @bp.route('/<username>/recommendations')
 def recommendations(username: str):
     user = get_object_or_404(User, User.username == username)
-    cbr_result = get_cbr_for_user(user, 18).keys()
-    return render_template('user/recommendations.html', user=user, cbr_result=cbr_result)
+    cbr_result = get_cbr_for_user(user, 9).keys()
+    mbcf_result = get_mbcf_for_user(user, 9).keys()
+    return render_template('user/recommendations.html', user=user, cbr_result=cbr_result, mbcf_result=mbcf_result)
 #     last_update, _ = System.get_or_create(key='UserSimilarities')
 #     if not last_update.date_time_value or days_delta(last_update.date_time_value, 1):
 #         threading.Thread(target=update_user_similarities).start()

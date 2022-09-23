@@ -12,7 +12,7 @@ from sklearn import preprocessing
 import game_lists_site.utils.steam as steam
 from game_lists_site.models import (Developer, Game, GameCBR, GameDeveloper,
                                     GameGenre, GameTag, Genre, System, Tag)
-from game_lists_site.utils.utils import get_cbr_for_game, days_delta, get_game
+from game_lists_site.utils.utils import days_delta, get_cbr_for_game, get_game
 
 bp = Blueprint('game', __name__, url_prefix='/game')
 
