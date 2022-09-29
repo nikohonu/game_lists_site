@@ -113,6 +113,7 @@ class UserMBCF(BaseModel):
 class GameStats(BaseModel):
     game = ForeignKeyField(Game, on_delete='CASCADE', primary_key=True)
     player_count = IntegerField(null=True)
+    features = TextField(null=True)
     last_update_time = DateTimeField(null=True)
 
 # class SteamApp(BaseModel):
