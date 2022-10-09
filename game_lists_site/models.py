@@ -47,6 +47,7 @@ class Game(BaseModel):
     release_date = DateField(null=True)
     image_url = TextField(null=True)
     last_update_time = DateTimeField(null=True)
+    rating = IntegerField(null=True)
 
 
 class Developer(BaseModel):
