@@ -1,6 +1,14 @@
 {% extends 'user/user_base.html' %}
 {% block section %} recommendations{% endblock %}
 {% block content %}
+<h2>Model based collaborative filtering for user</h2>
+<div>
+    {% for game in mobcf_result %}
+    <a href="{{url_for('game.game', game_id = game.id, game_name = game.name)}}">
+        <img src="{{game.image_url}}" alt="" height="204">
+    </a>
+    {% endfor %}
+</div>
 <h2>Content based recommendations for user</h2>
 <div>
     {% for game in cbr_result %}

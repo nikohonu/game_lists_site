@@ -11,10 +11,9 @@ from peewee import (
     ForeignKeyField,
     IntegerField,
     Model,
-    TextField,
     PostgresqlDatabase,
+    TextField,
 )
-
 
 user_data_dir = Path(user_data_dir(appauthor="Niko Honu", appname="game_lists_site"))
 user_data_dir.mkdir(exist_ok=True, parents=True)

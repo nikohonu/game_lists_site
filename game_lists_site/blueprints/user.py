@@ -6,6 +6,7 @@ from flask_peewee.utils import get_object_or_404
 
 import game_lists_site.utils.steam as steam
 from game_lists_site.models import Game, User, UserGame
+from game_lists_site.utils.mobcf import get_mobcf_for_user
 from game_lists_site.utils.utils import (
     days_delta,
     get_cbr_for_user,
@@ -105,16 +106,21 @@ def recommendations(username: str):
     user = get_object_or_404(User, User.username == username)
     cbr_result = get_cbr_for_user(user, 9).keys()
     mbcf_result = get_mbcf_for_user(user, 9).keys()
+    mobcf_result = get_mobcf_for_user(user, 9)
+    print(mobcf_result)
+    mobcf_result = mobcf_result.keys()
     return render_template(
         "user/recommendations.html",
         user=user,
         cbr_result=cbr_result,
         mbcf_result=mbcf_result,
+        mobcf_result=mobcf_result,
     )
-
 
 
 @bp.route("/<username>/statistics")
 def statistics(username: str):
     pass
+
+
 #     return render_template('user/statistics.html', username=username)

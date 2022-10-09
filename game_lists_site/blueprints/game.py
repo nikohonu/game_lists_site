@@ -1,10 +1,8 @@
 from bs4 import BeautifulSoup
 from flask import Blueprint, abort, render_template
 
-from game_lists_site.models import (GameDeveloper,
-                                    GameGenre, GameTag)
-from game_lists_site.utils.utils import (get_cbr_for_game,
-                                         get_game, get_mbcf_for_game)
+from game_lists_site.models import GameDeveloper, GameGenre, GameTag
+from game_lists_site.utils.utils import get_cbr_for_game, get_game, get_mbcf_for_game
 
 bp = Blueprint("game", __name__, url_prefix="/game")
 
