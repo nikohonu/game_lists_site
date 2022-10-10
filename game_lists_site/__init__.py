@@ -22,14 +22,15 @@ def create_app(test_config=None):
     @app.context_processor
     def utility_processor():
         def prettify_playtime(minutes: int):
+            minutes = round(minutes)
             int_hours = int(minutes / 60.0)
-            rount_hours = round(minutes / 60.0)
+            round_hours = round(minutes / 60.0)
             if minutes < 60:
                 return f"{minutes}m"
             elif int_hours <= 5:
                 return f"{int_hours}h {minutes - int_hours * 60}m"
             else:
-                return f"{rount_hours}h"
+                return f"{round_hours}h"
 
         return dict(prettify_playtime=prettify_playtime)
 

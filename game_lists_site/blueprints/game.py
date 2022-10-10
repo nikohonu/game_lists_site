@@ -2,7 +2,12 @@ from bs4 import BeautifulSoup
 from flask import Blueprint, abort, render_template
 
 from game_lists_site.models import GameDeveloper, GameGenre, GameTag
-from game_lists_site.utils.utils import get_cbr_for_game, get_game, get_mbcf_for_game
+from game_lists_site.utils.utils import (
+    get_cbr_for_game,
+    get_game,
+    get_hrs_for_game,
+    get_mbcf_for_game,
+)
 
 bp = Blueprint("game", __name__, url_prefix="/game")
 
@@ -24,6 +29,7 @@ def game(game_id, game_name):
     short_description = short_description[: min(500, len(short_description))]
     cbr_result = get_cbr_for_game(game, 9)
     mbcf_result = get_mbcf_for_game(game, 9)
+    hrs_result = get_hrs_for_game(game, 9)
     return render_template(
         "game.html",
         game=game,
@@ -33,4 +39,5 @@ def game(game_id, game_name):
         short_description=short_description,
         cbr_result=cbr_result,
         mbcf_result=mbcf_result,
+        hrs_result=hrs_result,
     )

@@ -1,4 +1,8 @@
 from flask import Blueprint
+from flask_peewee.utils import object_list
+
+from game_lists_site.models import Game, GameStats
+from game_lists_site.utils.utils import get_game_stats
 
 bp = Blueprint("games", __name__, url_prefix="/games")
 
@@ -31,8 +35,10 @@ bp = Blueprint("games", __name__, url_prefix="/games")
 
 @bp.route("/")
 def games():
-    pass
     # last_update, _ = System.get_or_create(key="GameStatistics")
+    for game in Game.select():
+        get_game_stats(game)
+    game_stats = GameStats.select().order_by(GameStats.player_count.desc())
     # if not last_update.date_time_value or days_delta(last_update.date_time_value, 1):
     #     threading.Thread(target=update_game_statistics).start()
     #     last_update.date_time_value = datetime.now()
@@ -40,4 +46,4 @@ def games():
     # game_statistics = GameStatistics.select().order_by(
     #     GameStatistics.player_count.desc()
     # )
-    # return object_list("games/games.html", game_statistics, paginate_by=40)
+    return object_list("games/games.html", game_stats, paginate_by=100)

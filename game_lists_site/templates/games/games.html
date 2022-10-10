@@ -10,30 +10,33 @@
 <table>
     <tr>
         <th>ID</th>
+        <th>Image</th>
         <th>Game</th>
-        <th>total_playtime</th>
-        <th>mean_playtime</th>
-        <th>median_playtime</th>
-        <th>max_playtime</th>
-        <th>min_playtime</th>
-        <th>player_count</th>
+        <th>Mean playtime</th>
+        <th>Median playtime</th>
+        <th>Max playtime</th>
+        <th>Min playtime</th>
+        <th>Total playtime</th>
+        <th>Player count</th>
     </tr>
     {% for gs in object_list %}
     <tr>
         <td>{{gs.game.id}}</td>
-        <td>{{gs.game.steam_app.name}}</td>
-        <td>{{(gs.total_playtime/60)|round|int}}</td>
-        <td>{{(gs.mean_playtime/60)|round|int}}</td>
-        <td>{{(gs.median_playtime/60)|round|int}}</td>
-        <td>{{(gs.max_playtime/60)|round|int}}</td>
-        <td>{{(gs.min_playtime/60)|round|int}}</td>
+        <td><img src="{{gs.game.image_url}}" alt="" height="87"></td>
+        <td><a href="{{url_for('game.game', game_id = gs.game.id, game_name = gs.game.name)}}">{{gs.game.name}}</td>
+        <td>{{prettify_playtime(gs.mean_playtime)}}</td>
+        <td>{{prettify_playtime(gs.median_playtime)}}</td>
+        <td>{{prettify_playtime(gs.max_playtime)}}</td>
+        <td>{{prettify_playtime(gs.min_playtime)}}</td>
+        <td>{{prettify_playtime(gs.total_playtime)}}</td>
         <td>{{gs.player_count}}</td>
     </tr>
     {% endfor %}
 </table>
 {% if page > 1 %}
-<a href="./?page={{ page - 1 }}">Prev</a>
+  <a class="previous" href="./?page={{ page - 1 }}">Previous</a>
 {% endif %}
-{% if page < pagination.get_pages() %} <a href="./?page={{ page + 1 }}">Next</a>
-    {% endif %}
-    {% endblock %}
+{% if pagination.get_pages() > page %}
+  <a class="next" href="./?page={{ page + 1 }}">Next</a>
+{% endif %}
+{% endblock %}

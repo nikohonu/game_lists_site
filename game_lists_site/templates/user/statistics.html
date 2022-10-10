@@ -1,3 +1,30 @@
 {% extends 'user/user_base.html' %}
 
+
 {% block section %} statistics{% endblock %}
+{% block content %}
+
+<section>
+    {% with title="Total Games", value=statistics['total_games'] %}
+    {% include "user/statistics/block.html" %}
+    {% endwith %}
+    {% with title="Hours Played", value=statistics['hours_played'] %}
+    {% include "user/statistics/block.html" %}
+    {% endwith %}
+    {% with title="Days Played", value=statistics['days_played'] %}
+    {% include "user/statistics/block.html" %}
+    {% endwith %}
+    {% with title="Mean Playtime", value=statistics['mean_playtime'] %}
+    {% include "user/statistics/block.html" %}
+    {% endwith %}
+    {% with title="Playtime STD", value=statistics['playtime_standard_deviation'] %}
+    {% include "user/statistics/block.html" %}
+    {% endwith %}
+    {% with title="Mean Score", value=statistics['mean_score'] %}
+    {% include "user/statistics/block.html" %}
+    {% endwith %}
+    {% with title="Score STD", value=statistics['score_standard_deviation'] %}
+    {% include "user/statistics/block.html" %}
+    {% endwith %}
+</section>
+{% endblock %}

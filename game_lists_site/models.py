@@ -94,7 +94,6 @@ class UserGame(BaseModel):
     game = ForeignKeyField(Game, on_delete="CASCADE")
     last_played = DateTimeField(null=True)
     playtime = IntegerField(default=0)
-    normalized_playtime = FloatField(default=0)
     score = IntegerField(null=True)
 
     class Meta:
@@ -130,6 +129,11 @@ class GameStats(BaseModel):
     game = ForeignKeyField(Game, on_delete="CASCADE", primary_key=True)
     player_count = IntegerField(null=True)
     features = TextField(null=True)
+    total_playtime = FloatField(default=0)
+    mean_playtime = FloatField(default=0)
+    median_playtime = FloatField(default=0)
+    max_playtime = FloatField(default=0)
+    min_playtime = FloatField(default=0)
     last_update_time = DateTimeField(null=True)
 
 

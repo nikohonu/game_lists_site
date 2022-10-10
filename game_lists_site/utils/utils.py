@@ -115,9 +115,17 @@ def get_game_stats(game: Game):
             UserGame.select().where(UserGame.game == game).where(UserGame.playtime > 0)
         )
         game_stats.features = " ".join(features)
-        if not game.rating:
+        if game.rating == None:
             game.rating = steam.get_app_rating(game.id)
             game.save()
+        playtimes = np.array([ug.playtime for ug in UserGame.select().where(UserGame.game == game).where(UserGame.playtime > 0)])
+        if len(playtimes) > 0:
+            game_stats.total_playtime = np.sum(playtimes)
+            game_stats.mean_playtime = np.mean(playtimes)
+            game_stats.median_playtime = np.median(playtimes)
+            game_stats.max_playtime = np.max(playtimes)
+            game_stats.min_playtime = np.min(playtimes)
+            
         game_stats.last_update_time = dt.datetime.now()
         game_stats.save()
     return game_stats
@@ -586,3 +594,15 @@ def get_hrs_for_user(target_user, max_count=9):
         ]
     )
     return {k: v for k, v in list(result.items())[:max_count]}
+
+def get_hrs_for_game(target_game, max_count=9):
+    cbr_result = get_cbr_for_game(target_game, 36)
+    mbcf_result = get_mbcf_for_game(target_game, 36)
+    result = merge_dicts(
+        [
+            normalize_dict(cbr_result, 0.5),
+            normalize_dict(mbcf_result, 0.25),
+        ]
+    )
+    return {k: v for k, v in list(result.items())[:max_count]}
+
