@@ -1,0 +1,52 @@
+<div class="chart">
+    <canvas id="{{name}}Chart" height="50px"></canvas>
+    <script>
+        Chart.register(ChartDataLabels);
+        const {{ name }}Labels = [
+            {% for key in data %}
+        '{{key}}',
+            {% endfor %}
+    ];
+        const {{ name }}Data = {
+            labels: {{ name }}Labels,
+                datasets: [{
+                    label: 'Count',
+                    backgroundColor: 'rgb(221, 120, 120)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    barThickness: 40,
+                    data: [
+                        {% for key in data %}
+                    {{ data[key] }},
+                {% endfor %}
+                ],
+        }]
+    };
+        const {{ name }}Config = {
+            type: 'bar',
+            data: {{ name }}Data,
+                options: {
+            layout: {
+                padding: {
+                    top: 25
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                datalabels: {
+                    anchor: 'end',
+                        align: 'top',
+                            font: {
+                        weight: "bolder",
+                    },
+                }
+            },
+        }
+    };
+        const {{ name }}Chart = new Chart(
+            document.getElementById('{{name}}Chart'),
+            {{ name }}Config
+        );
+    </script>
+</div>

@@ -9,7 +9,6 @@
         <th>Image</th>
         <th>Game</th>
         <th>Playtime</th>
-        <th>Normalized playtime</th>
         <th>Last played</th>
         <th>Score</th>
     </tr>
@@ -19,7 +18,6 @@
         <td><img src="{{ug.game.image_url}}" alt="" height="87"></td>
         <td><a href="{{url_for('game.game', game_id = ug.game.id, game_name = ug.game.name)}}">{{ug.game.name}}</td>
         <td>{{prettify_playtime(ug.playtime)}}</td>
-        <td>{{ug.normalized_playtime}}</td>
         <td>{{ug.last_played}}</td>
         <td><input type="number" id="{{ug.game.id}}" class="score" min="0" max="10" value="{{ug.score}}"></td>
     </tr>

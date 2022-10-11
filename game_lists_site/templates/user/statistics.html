@@ -1,30 +1,87 @@
 {% extends 'user/user_base.html' %}
 
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.0/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+{% endblock %}
 
 {% block section %} statistics{% endblock %}
 {% block content %}
-
-<section>
-    {% with title="Total Games", value=statistics['total_games'] %}
+<section class="highlights">
+    {% with title="Total Games", value=statistics['total_games'], icon='icons/gamepad.svg' %}
     {% include "user/statistics/block.html" %}
     {% endwith %}
-    {% with title="Hours Played", value=statistics['hours_played'] %}
+    {% with title="Hours Played", value=statistics['hours_played'], icon='icons/clock.svg' %}
     {% include "user/statistics/block.html" %}
     {% endwith %}
-    {% with title="Days Played", value=statistics['days_played'] %}
+    {% with title="Days Played", value=statistics['days_played'], icon='icons/calendar.svg' %}
     {% include "user/statistics/block.html" %}
     {% endwith %}
-    {% with title="Mean Playtime", value=statistics['mean_playtime'] %}
+    {% with title="Mean Playtime", value=statistics['mean_playtime'], icon='icons/divided.svg' %}
     {% include "user/statistics/block.html" %}
     {% endwith %}
-    {% with title="Playtime STD", value=statistics['playtime_standard_deviation'] %}
+    {% with title="Playtime STD", value=statistics['playtime_standard_deviation'], icon='icons/divided.svg' %}
     {% include "user/statistics/block.html" %}
     {% endwith %}
-    {% with title="Mean Score", value=statistics['mean_score'] %}
+    {% with title="Mean Score", value=statistics['mean_score'], icon='icons/divided.svg' %}
     {% include "user/statistics/block.html" %}
     {% endwith %}
-    {% with title="Score STD", value=statistics['score_standard_deviation'] %}
+    {% with title="Score STD", value=statistics['score_standard_deviation'], icon='icons/divided.svg' %}
     {% include "user/statistics/block.html" %}
     {% endwith %}
 </section>
+<section>
+    <div class="header">
+        <h2>Score</h2>
+        <div class="switch">
+            <div class="options">
+                <div class="active option">
+                    <span>Game Played</span>
+                </div>
+                <div class="option">
+                    <span>Hours Played</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% with name="score_count", data=statistics['score_count'] %}
+    {% include "user/statistics/bar_chart.html" %}
+    {% endwith %}
+    {% with name="score_hours", data=statistics['score_hours'] %}
+    {% include "user/statistics/bar_chart.html" %}
+    {% endwith %}
+    <script>
+        tabs = document.getElementsByClassName("chart")
+        tabs.item(1).style.display = "none";
+        var onTabClick = function (elements, element) {
+            var hide = []
+            if (!element.classList.contains("active")) {
+                element.classList.add("active")
+                for (var i = 0; i < elements.length; i++) {
+                    if (elements.item(i) != element) {
+                        elements.item(i).classList.remove("active")
+                        hide.push(i)
+                    }
+                    else {
+                        index = i
+                    }
+                }
+                tabs.item(index).style.display = "block";
+                hide.forEach(i => {
+                    tabs.item(i).style.display = "none";
+                });
+            }
+        };
+        var elements = document.getElementsByClassName("option");
+        for (var i = 0; i < elements.length; i++) {
+            const element = elements.item(i)
+            element.onclick = function () {
+                onTabClick(elements, element)
+            }
+        }
+    </script>
+</section>
+</div>
+</div>
+
 {% endblock %}
