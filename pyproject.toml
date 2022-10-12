@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "game-lists-site"
-version = "0.22.1"
+version = "0.23.0"
 description = "game lists site"
 authors = ["nikohonu <nikohonu@gmail.com>"]
 license = "MIT"
@@ -29,6 +29,7 @@ autopep8 = "^1.7.0"
 snakeviz = "^2.1.1"
 isort = "^5.10.1"
 ipykernel = "^6.16.0"
+djlint = "^1.19.0"
 
 [build-system]
 requires = ["poetry-core"]
@@ -40,3 +41,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.isort]
 profile = "black"
+
+[tool.djlint]
+profile="jinja"

@@ -54,6 +54,10 @@ def create_app(test_config=None):
 
     app.register_blueprint(user.bp)
 
+    import game_lists_site.blueprints.user_stats as user_stats
+
+    app.register_blueprint(user_stats.bp)
+
     import game_lists_site.blueprints.steam as steam
 
     app.register_blueprint(steam.bp)

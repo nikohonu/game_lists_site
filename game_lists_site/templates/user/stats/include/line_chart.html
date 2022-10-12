@@ -1,4 +1,4 @@
-<div class="chart">
+<div class="line-chart">
     <canvas id="{{name}}Chart" height="50px"></canvas>
     <script>
         Chart.register(ChartDataLabels);
@@ -22,7 +22,7 @@
         }]
     };
         const {{ name }}Config = {
-            type: 'bar',
+            type: 'line',
             data: {{ name }}Data,
                 options: {
             layout: {

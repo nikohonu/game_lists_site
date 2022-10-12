@@ -106,19 +106,6 @@ footer {
     display: flex;
 }
 
-section.highlights {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    padding: 16px 0;
-}
-
-.highlight {
-    display: flex;
-    align-items: center;
-    min-width: 170px;
-}
-
 .circle {
     border-radius: 50%;
     width: 40px;
@@ -141,7 +128,15 @@ section.highlights {
     font-size: 20pt;
 }
 
-.chart {
+.bar-chart {
+    background-color: white;
+    border-radius: 10px;
+    padding: 16px;
+    margin: 16px 0px 16px 0px;
+    box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.line-chart {
     background-color: white;
     border-radius: 10px;
     padding: 16px;
@@ -165,14 +160,17 @@ section.highlights {
     display: flex;
 }
 
-.option {
+.score-option {
     display: flex;
     border-radius: 30px;
     padding: 4px 12px;
     cursor: pointer;
 }
 
-.active {
-    background: var(--ctp-latte-flamingo);
-    color: white;
+.release-year-option {
+    display: flex;
+    border-radius: 30px;
+    padding: 4px 12px;
+    cursor: pointer;
 }
+

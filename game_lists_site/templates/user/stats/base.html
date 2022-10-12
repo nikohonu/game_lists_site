@@ -1,0 +1,26 @@
+{% extends "user/base.html" %}
+{% block section %} stats{% endblock section %}
+{% set nav = ({"Overview":"overview", "Genres": "genres", "Tags": "tags", "Developers": "developers"}) %}
+{% block head %}
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='user/stats.css') }}">
+    <link>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.0/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+{% endblock head %}
+{% block content %}
+    <div class="content">
+        <div class="nav">
+            {% for key, value in nav.items() %}
+                {% if url_for(request.endpoint, username=user.username) == url_for('user_stats.' + value, username=user.username) %}
+                    <a href="{{ url_for('user_stats.' + value, username=user.username )}}" class="active">{{key}}</a>
+                {% else %}
+                    <a href="{{ url_for('user_stats.' + value, username=user.username )}}">{{key}}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="stats-content">
+            {% block stats_content %}{% endblock %}
+        </div>
+    </div>
+{% endblock %}

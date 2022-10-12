@@ -118,32 +118,3 @@ def recommendations(username: str):
         mobcf_result=mobcf_result,
         hrs_result=hrs_result,
     )
-
-
-@bp.route("/<username>/statistics")
-def statistics(username: str):
-    user = get_object_or_404(User, User.username == username)
-    statistics = {}
-    user_game = UserGame.select().where(UserGame.user == user)
-    playtimes = np.array([ug.playtime for ug in user_game.where(UserGame.playtime > 0)])
-    scores = np.array([ug.score for ug in user_game.where(UserGame.score > 0)])
-    statistics["total_games"] = len(list(user_game))
-    statistics["hours_played"] = round(playtimes.sum() / 60)
-    statistics["days_played"] = round(playtimes.sum() / 60 / 24 * 10) / 10
-    statistics["mean_playtime"] = round(playtimes.mean() / 60 * 100) / 100
-    statistics["playtime_standard_deviation"] = round(playtimes.std() / 60 * 100) / 100
-    statistics["mean_score"] = round(scores.mean() * 100) / 100
-    statistics["score_standard_deviation"] = round(scores.std() * 100) / 100
-    statistics["score_count"] = {}
-    for i in range(1, 11):
-        count = len(user_game.where(UserGame.score == i))
-        if count:
-            statistics["score_count"][i] = count
-    statistics["score_hours"] = {}
-    for i in range(1, 11):
-        hours = round(
-            np.sum([ug.playtime for ug in user_game.where(UserGame.score == i)]) / 60
-        )
-        if hours != 0:
-            statistics["score_hours"][i] = hours
-    return render_template("user/statistics.html", user=user, statistics=statistics)

@@ -1,4 +1,4 @@
-{% extends 'user/user_base.html' %}
+{% extends 'user/base.html' %}
 
 {% block section %} games{% endblock %}
 
@@ -8,8 +8,9 @@
         <th>ID</th>
         <th>Image</th>
         <th>Game</th>
+        <th>Release Year</th>
+        <th>Last Played</th>
         <th>Playtime</th>
-        <th>Last played</th>
         <th>Score</th>
     </tr>
     {% for ug in user_games %}
@@ -17,8 +18,9 @@
         <td>{{ug.game.id}}</td>
         <td><img src="{{ug.game.image_url}}" alt="" height="87"></td>
         <td><a href="{{url_for('game.game', game_id = ug.game.id, game_name = ug.game.name)}}">{{ug.game.name}}</td>
-        <td>{{prettify_playtime(ug.playtime)}}</td>
+        <td>{{ug.game.release_date}}</td>
         <td>{{ug.last_played}}</td>
+        <td>{{prettify_playtime(ug.playtime)}}</td>
         <td><input type="number" id="{{ug.game.id}}" class="score" min="0" max="10" value="{{ug.score}}"></td>
     </tr>
     {% endfor %}

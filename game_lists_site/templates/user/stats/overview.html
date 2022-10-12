@@ -1,0 +1,136 @@
+{% extends 'user/stats/base.html' %}
+{% block stats_content %}
+    <section class="highlights">
+        {% with title="Total Games", value=statistics['total_games'], icon='icons/gamepad.svg' %}
+            {% include "user/stats/include/block.html" %}
+        {% endwith %}
+        {% with title="Hours Played", value=statistics['hours_played'], icon='icons/clock.svg' %}
+            {% include "user/stats/include/block.html" %}
+        {% endwith %}
+        {% with title="Days Played", value=statistics['days_played'], icon='icons/calendar.svg' %}
+            {% include "user/stats/include/block.html" %}
+        {% endwith %}
+        {% with title="Mean Playtime", value=statistics['mean_playtime'], icon='icons/divided.svg' %}
+            {% include "user/stats/include/block.html" %}
+        {% endwith %}
+        {% with title="Playtime STD", value=statistics['playtime_standard_deviation'], icon='icons/divided.svg' %}
+            {% include "user/stats/include/block.html" %}
+        {% endwith %}
+        {% with title="Mean Score", value=statistics['mean_score'], icon='icons/divided.svg' %}
+            {% include "user/stats/include/block.html" %}
+        {% endwith %}
+        {% with title="Score STD", value=statistics['score_standard_deviation'], icon='icons/divided.svg' %}
+            {% include "user/stats/include/block.html" %}
+        {% endwith %}
+    </section>
+    <section>
+        <div class="header">
+            <h2>Score</h2>
+            <div class="switch">
+                <div class="options">
+                    <div class="active score-option">
+                        <span>Game Played</span>
+                    </div>
+                    <div class="score-option">
+                        <span>Hours Played</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% with name="score_count", data=statistics['score_count'], unit="Count" %}
+            {% include "user/stats/include/bar_chart.html" %}
+        {% endwith %}
+        {% with name="score_hours", data=statistics['score_hours'], unit="Hours" %}
+            {% include "user/stats/include/bar_chart.html" %}
+        {% endwith %}
+        <script>
+        score_tabs = document.getElementsByClassName("bar-chart")
+        score_tabs.item(1).style.display = "none";
+        var onScoreTabClick = function (elements, element) {
+            var hide = []
+            if (!element.classList.contains("active")) {
+                element.classList.add("active")
+                for (var i = 0; i < elements.length; i++) {
+                    if (elements.item(i) != element) {
+                        elements.item(i).classList.remove("active")
+                        hide.push(i)
+                    }
+                    else {
+                        index = i
+                    }
+                }
+                score_tabs.item(index).style.display = "block";
+                hide.forEach(i => {
+                    score_tabs.item(i).style.display = "none";
+                });
+            }
+        };
+        var elements = document.getElementsByClassName("score-option");
+        for (var i = 0; i < elements.length; i++) {
+            const element = elements.item(i)
+            element.onclick = function () {
+                onScoreTabClick(elements, element)
+            }
+        }
+
+        </script>
+    </section>
+    <section>
+        <div class="header">
+            <h2>Release Year</h2>
+            <div class="switch">
+                <div class="options">
+                    <div class="active release-year-option">
+                        <span>Game Played</span>
+                    </div>
+                    <div class="release-year-option">
+                        <span>Hours Played</span>
+                    </div>
+                    <div class="release-year-option">
+                        <span>Mean Score</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% with name="release_years_count", data=statistics['release_years_count'], unit="Count" %}
+            {% include "user/stats/include/line_chart.html" %}
+        {% endwith %}
+        {% with name="release_years_hours", data=statistics['release_years_hours'], unit="Hours" %}
+            {% include "user/stats/include/line_chart.html" %}
+        {% endwith %}
+        {% with name="release_years_mean", data=statistics['release_years_mean'], unit="Mean Score" %}
+            {% include "user/stats/include/line_chart.html" %}
+        {% endwith %}
+        <script>
+        rYTabs = document.getElementsByClassName("line-chart")
+        rYTabs.item(1).style.display = "none";
+        rYTabs.item(2).style.display = "none";
+        var onRYTabClick = function (rYElements, rYElement) {
+            var hide = []
+            if (!rYElement.classList.contains("active")) {
+                rYElement.classList.add("active")
+                for (var i = 0; i < rYElements.length; i++) {
+                    if (rYElements.item(i) != rYElement) {
+                        rYElements.item(i).classList.remove("active")
+                        hide.push(i)
+                    }
+                    else {
+                        index = i
+                    }
+                }
+                rYTabs.item(index).style.display = "block";
+                hide.forEach(i => {
+                    rYTabs.item(i).style.display = "none";
+                });
+            }
+        };
+        var rYElements = document.getElementsByClassName("release-year-option");
+        for (var i = 0; i < rYElements.length; i++) {
+            const rYElement = rYElements.item(i)
+            rYElement.onclick = function () {
+                onRYTabClick(rYElements, rYElement)
+            }
+        }
+        </script>
+    </section>
+{% endblock stats_content %}

@@ -1,0 +1,36 @@
+{% extends 'user/stats/base.html' %}
+{% block stats_content %}
+    <div class="header">
+        <h2>Genres</h2>
+        <div class="switch">
+            <div class="options">
+                <div class="active option">
+                    <span>Count</span>
+                </div>
+                <div class="option">
+                    <span>Mean Score</span>
+                </div>
+                <div class="option">
+                    <span>Time Played</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <section id="by-count" class="card-section"">
+        {% for genre, data in stats["by_count"].items() %}
+            <div class="card">
+                <h1>{{ genre }}</h1>
+                Count:{{ data['count'] }}
+                <hr>
+                Mean Score: {{ data['mean'] }}
+                <hr>
+                Time Played: {{ prettify_playtime(data['time']) }}
+                <hr>
+            </div>
+        {% endfor %}
+    </section>
+    <section id="by-mean-score">
+    </section>
+    <section id="by-time-played">
+    </section>
+{% endblock stats_content %}
