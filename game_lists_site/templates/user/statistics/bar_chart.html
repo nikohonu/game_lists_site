@@ -2,7 +2,7 @@
     <canvas id="{{name}}Chart" height="50px"></canvas>
     <script>
         Chart.register(ChartDataLabels);
-        const {{ name }}Labels = [
+        const {{name}}Labels = [
             {% for key in data %}
         '{{key}}',
             {% endfor %}
@@ -10,7 +10,7 @@
         const {{ name }}Data = {
             labels: {{ name }}Labels,
                 datasets: [{
-                    label: 'Count',
+                    label: '{{unit}}',
                     backgroundColor: 'rgb(221, 120, 120)',
                     borderColor: 'rgb(255, 99, 132)',
                     barThickness: 40,

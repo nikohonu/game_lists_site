@@ -44,10 +44,10 @@
             </div>
         </div>
     </div>
-    {% with name="score_count", data=statistics['score_count'] %}
+    {% with name="score_count", data=statistics['score_count'], unit="Count" %}
     {% include "user/statistics/bar_chart.html" %}
     {% endwith %}
-    {% with name="score_hours", data=statistics['score_hours'] %}
+    {% with name="score_hours", data=statistics['score_hours'], unit="Hours" %}
     {% include "user/statistics/bar_chart.html" %}
     {% endwith %}
     <script>
