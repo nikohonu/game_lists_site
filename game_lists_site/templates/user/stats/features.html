@@ -1,0 +1,48 @@
+{% extends "user/stats/base.html" %}
+{% block stats_content %}
+    <div class="header">
+        <h2>{{ title }}</h2>
+        <div class="switch">
+            <div class="options">
+                <div class="active option" id="by-count">
+                    <span>Count</span>
+                </div>
+                <div class="option" id="by-score">
+                    <span>Mean Score</span>
+                </div>
+                <div class="option" id="by-playtime">
+                    <span>Playtime</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <section id="card-section">
+        {% for feature, data in stats.items() %}
+            <div class="card" count={{ data['count'] }} score={{ (data['score']*100)|int }} playtime={{ data['playtime'] }}>
+                <h1>{{ data['name'] }}</h1>
+                <div class="details">
+                    <div>
+                        <div class="data">{{ data['count'] }}</div>
+                        <div>Count</div>
+                    </div>
+                    <div>
+                        <div class="data">{{ data['score'] }}</div>
+                        <div>Mean Score</div>
+                    </div>
+                    <div>
+                        <div class="data">{{ prettify_playtime(data['playtime']) }}</div>
+                        <div>Playtime</div>
+                    </div>
+                </div>
+                <div class="relations">
+                    {% for ug in data['games'] %}
+                        <a href="{{ url_for('game.game', game_id = ug.game.id, game_name = ug.game.name)}}">
+                            <img src="{{ ug.game.image_url }}" width="179px" score={{ ug.score }} playtime={{ ug.playtime }} />
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </section>
+    <script src="{{ url_for('static', filename='user/features.js') }}"></script>
+{% endblock stats_content %}

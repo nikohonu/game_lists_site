@@ -1,11 +1,11 @@
-{% extends 'base.html' %}
+{% extends "games/base.html" %}
 {% block header %}
 <div class="sub-header">
     <div class="block">
-        <h1>{% block title %}Games{% block section %}{% endblock %}{% endblock %}</h1>
+        <h1>{% block title %}Games{% block section %}{% endblock section %}{% endblock title %}</h1>
     </div>
 </div>
-{% endblock %}
+{% endblock header %}
 {% block content %}
 <table>
     <tr>
@@ -18,25 +18,21 @@
         <th>Min playtime</th>
         <th>Total playtime</th>
         <th>Player count</th>
+        <th>Rating</th>
     </tr>
-    {% for gs in object_list %}
+    {% for gs in game_stats %}
     <tr>
-        <td>{{gs.game.id}}</td>
-        <td><img src="{{gs.game.image_url}}" alt="" height="87"></td>
-        <td><a href="{{url_for('game.game', game_id = gs.game.id, game_name = gs.game.name)}}">{{gs.game.name}}</td>
-        <td>{{prettify_playtime(gs.mean_playtime)}}</td>
-        <td>{{prettify_playtime(gs.median_playtime)}}</td>
-        <td>{{prettify_playtime(gs.max_playtime)}}</td>
-        <td>{{prettify_playtime(gs.min_playtime)}}</td>
-        <td>{{prettify_playtime(gs.total_playtime)}}</td>
-        <td>{{gs.player_count}}</td>
+        <td>{{ gs.game.id }}</td>
+        <td><img src="{{ gs.game.image_url }}" alt="" height="87"></td>
+        <td><a href="{{ url_for('game.game', game_id = gs.game.id, game_name = gs.game.name) }}">{{gs.game.name}}</td>
+        <td>{{ prettify_playtime(gs.mean_playtime)}}</td>
+        <td>{{ prettify_playtime(gs.median_playtime) }}</td>
+        <td>{{ prettify_playtime(gs.max_playtime) }}</td>
+        <td>{{ prettify_playtime(gs.min_playtime) }}</td>
+        <td>{{ prettify_playtime(gs.total_playtime) }}</td>
+        <td>{{ gs.player_count }}</td>
+        <td>{{ ((gs.rating*100)|int)/100 }}</td>
     </tr>
     {% endfor %}
 </table>
-{% if page > 1 %}
-  <a class="previous" href="./?page={{ page - 1 }}">Previous</a>
-{% endif %}
-{% if pagination.get_pages() > page %}
-  <a class="next" href="./?page={{ page + 1 }}">Next</a>
-{% endif %}
-{% endblock %}
+{% endblock content %}

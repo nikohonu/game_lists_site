@@ -50,7 +50,7 @@ section {
     margin-bottom: 32px;
 }
 
-section.card-section {
+section#card-section {
     margin: 16px 0 0 0;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -71,4 +71,16 @@ section .card {
     border-radius: 30px;
     padding: 4px 12px;
     cursor: pointer;
+}
+
+.card .details {
+    padding-top: 16px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.card .relations {
+    padding-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
 }

@@ -134,6 +134,7 @@ class GameStats(BaseModel):
     median_playtime = FloatField(default=0)
     max_playtime = FloatField(default=0)
     min_playtime = FloatField(default=0)
+    rating = FloatField(default=0)
     last_update_time = DateTimeField(null=True)
 
 

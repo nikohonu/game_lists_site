@@ -83,15 +83,8 @@ def get_game(game_id: int):
         game.save()
     return game
 
-
-game_stats_data = {gs.game: gs for gs in GameStats.select()}
-
-
 def get_game_stats(game: Game):
-    if game in game_stats_data:
-        game_stats = game_stats_data[game]
-    else:
-        game_stats = None
+    game_stats = GameStats.get_or_none(GameStats.game == game)
     if not game_stats or days_delta(game_stats.last_update_time) >= 7:
         game_stats, _ = GameStats.get_or_create(game=game)
         # features
@@ -115,17 +108,19 @@ def get_game_stats(game: Game):
             UserGame.select().where(UserGame.game == game).where(UserGame.playtime > 0)
         )
         game_stats.features = " ".join(features)
-        if game.rating == None:
-            game.rating = steam.get_app_rating(game.id)
-            game.save()
-        playtimes = np.array([ug.playtime for ug in UserGame.select().where(UserGame.game == game).where(UserGame.playtime > 0)])
+        users_game = UserGame.select().where(UserGame.game == game)
+        playtimes = np.array([ug.playtime for ug in users_game.where(UserGame.playtime > 0)])
+        scores = np.array([ug.score for ug in users_game.where(UserGame.score > 0)])
         if len(playtimes) > 0:
             game_stats.total_playtime = np.sum(playtimes)
             game_stats.mean_playtime = np.mean(playtimes)
             game_stats.median_playtime = np.median(playtimes)
             game_stats.max_playtime = np.max(playtimes)
             game_stats.min_playtime = np.min(playtimes)
-            
+            if len(scores) > 2:
+                game_stats.rating = np.mean(scores)
+            else:
+                game_stats.rating = 0
         game_stats.last_update_time = dt.datetime.now()
         game_stats.save()
     return game_stats
