@@ -13,9 +13,9 @@
         <div class="nav">
             {% for key, value in nav.items() %}
                 {% if url_for(request.endpoint, username=user.username) == url_for('user_stats.' + value, username=user.username) %}
-                    <a href="{{ url_for('user_stats.' + value, username=user.username )}}" class="active">{{key}}</a>
+                    <a href="{{ url_for('user_stats.' + value, username=user.username, exclude_without_score=exclude_without_score) }}" class="active">{{key}}</a>
                 {% else %}
-                    <a href="{{ url_for('user_stats.' + value, username=user.username )}}">{{key}}</a>
+                    <a href="{{ url_for('user_stats.' + value, username=user.username, exclude_without_score=exclude_without_score) }}">{{key}}</a>
                 {% endif %}
             {% endfor %}
         </div>

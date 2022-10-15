@@ -1,1 +1,39 @@
 {% extends "base.html" %}
+
+{% set nav = ({"Overview":"games", "Stats": "stats"}) %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='games.css') }}" />
+<link rel="stylesheet"
+href="{{ url_for('static', filename='user/stats.css') }}">
+<link>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.0/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+{% endblock head %}
+
+{% block header %}
+<div class="sub-header">
+    <div class="Games">
+        <h1>
+            {% block title %}
+            Games
+            {% block section %}{% endblock section %}
+            {% endblock title %}
+        </h1>
+        <nav>
+            <div class="nav-center">
+                {% for key, value in nav.items() %}
+                {% if url_for(request.endpoint) == url_for('games.' + value) %}
+                <a href="{{ url_for('games.' + value) }}" class="nav-link-active">{{ key }}</a>
+                {% else %}
+                <a href="{{ url_for('games.' + value) }}">{{ key }}</a>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </nav>
+    </div>
+</div>
+{% endblock header %}
+{% block nav %}{% endblock nav %}
+{% block content %}
+{% endblock content %}

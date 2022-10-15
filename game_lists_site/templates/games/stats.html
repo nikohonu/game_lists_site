@@ -1,0 +1,80 @@
+{% extends "games/base_stats.html" %}
+
+{% block stats_content %}
+<section class="highlights">
+    {% with title="Total Games", value=stats['total_games'], icon='icons/gamepad.svg' %}
+    {% include "user/stats/include/block.html" %}
+    {% endwith %}
+    {% with title="Hours Played", value=stats['hours_played'], icon='icons/clock.svg' %}
+    {% include "user/stats/include/block.html" %}
+    {% endwith %}
+    {% with title="Days Played", value=stats['days_played'], icon='icons/calendar.svg' %}
+    {% include "user/stats/include/block.html" %}
+    {% endwith %}
+    {% with title="Mean Playtime", value=stats['mean_playtime'], icon='icons/divided.svg' %}
+    {% include "user/stats/include/block.html" %}
+    {% endwith %}
+    {% with title="Playtime STD", value=stats['playtime_standard_deviation'], icon='icons/divided.svg' %}
+    {% include "user/stats/include/block.html" %}
+    {% endwith %}
+    {% with title="Mean Score", value=stats['mean_score'], icon='icons/divided.svg' %}
+    {% include "user/stats/include/block.html" %}
+    {% endwith %}
+    {% with title="Score STD", value=stats['score_standard_deviation'], icon='icons/divided.svg' %}
+    {% include "user/stats/include/block.html" %}
+    {% endwith %}
+</section>
+<section>
+    <div class="header">
+        <h2>Score</h2>
+        <div class="switch overview">
+            <div class="options">
+                <div class="active option" id="score-count">
+                    <span>Game Played</span>
+                </div>
+                <div class="option" id="score-hours"">
+                    <span>Hours Played</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="score_charts">
+    {% with name="score_count", data=stats['score_count'], unit="Count" %}
+    {% include "user/stats/include/bar_chart.html" %}
+    {% endwith %}
+    {% with name="score_hours", data=stats['score_hours'], unit="Hours" %}
+    {% include "user/stats/include/bar_chart.html" %}
+    {% endwith %}
+    </div>
+</section>
+<section>
+    <div class="header">
+        <h2>Release Year</h2>
+        <div class="switch overview">
+            <div class="options">
+                <div class="active option-year" id="year-count">
+                    <span>Game Played</span>
+                </div>
+                <div class="option-year" id="year-hours">
+                    <span>Hours Played</span>
+                </div>
+                <div class="option-year" id="year-score">
+                    <span>Mean Score</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="year_charts">
+    {% with name="release_years_count", data=stats['release_years_count'], unit="Count" %}
+        {% include "user/stats/include/line_chart.html" %}
+    {% endwith %}
+    {% with name="release_years_hours", data=stats['release_years_hours'], unit="Hours" %}
+        {% include "user/stats/include/line_chart.html" %}
+    {% endwith %}
+    {% with name="release_years_mean", data=stats['release_years_mean'], unit="Mean Score" %}
+        {% include "user/stats/include/line_chart.html" %}
+    {% endwith %}
+    </div>
+</section>
+<script src="{{ url_for('static', filename='games.js') }}"></script>
+{% endblock stats_content %}

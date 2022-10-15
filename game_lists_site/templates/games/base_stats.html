@@ -1,0 +1,19 @@
+{% extends "games/base.html" %}
+{% set sub_nav = ({"Overview":"stats", "Genres": "genres", "Tags": "tags", "Developers": "developers"}) %}
+{% block section %} stats{% endblock section %}
+{% block content %}
+    <div class="content">
+        <div class="nav">
+            {% for key, value in sub_nav.items() %}
+                {% if url_for(request.endpoint) == url_for('games.' + value) %}
+                    <a href="{{ url_for('games.' + value, exclude_without_score=exclude_without_score) }}" class="active">{{key}}</a>
+                {% else %}
+                    <a href="{{ url_for('games.' + value, exclude_without_score=exclude_without_score) }}">{{key}}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="stats-content">
+            {% block stats_content %}{% endblock stats_content %}
+        </div>
+    </div>
+{% endblock content %}

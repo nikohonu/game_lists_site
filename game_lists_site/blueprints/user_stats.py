@@ -1,5 +1,5 @@
 import numpy as np
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request
 from flask_peewee.utils import get_object_or_404
 
 from game_lists_site.models import GameDeveloper, GameGenre, GameTag, User, UserGame
@@ -30,72 +30,73 @@ free_game_ids = [440, 570, 950670, 450390]
 bp = Blueprint("user_stats", __name__, url_prefix="/user")
 
 
-@bp.route("/<username>/stats/overview")
+@bp.route("/<username>/stats/overview", methods=["GET"])
 def overview(username: str):
+
     user = get_object_or_404(User, User.username == username)
-    statistics = {}
+    stats = {}
     user_game = UserGame.select().where(UserGame.user == user)
     playtimes = np.array([ug.playtime for ug in user_game.where(UserGame.playtime > 0)])
     scores = np.array([ug.score for ug in user_game.where(UserGame.score > 0)])
-    statistics["total_games"] = len(list(user_game))
-    statistics["hours_played"] = round(playtimes.sum() / 60)
-    statistics["days_played"] = round(playtimes.sum() / 60 / 24 * 10) / 10
-    statistics["mean_playtime"] = round(playtimes.mean() / 60 * 100) / 100
-    statistics["playtime_standard_deviation"] = round(playtimes.std() / 60 * 100) / 100
-    statistics["mean_score"] = round(scores.mean() * 100) / 100
-    statistics["score_standard_deviation"] = round(scores.std() * 100) / 100
-    statistics["score_count"] = {}
+    stats["total_games"] = len(list(user_game))
+    stats["hours_played"] = round(playtimes.sum() / 60)
+    stats["days_played"] = round(playtimes.sum() / 60 / 24 * 10) / 10
+    stats["mean_playtime"] = round(playtimes.mean() / 60 * 100) / 100
+    stats["playtime_standard_deviation"] = round(playtimes.std() / 60 * 100) / 100
+    stats["mean_score"] = round(scores.mean() * 100) / 100
+    stats["score_standard_deviation"] = round(scores.std() * 100) / 100
+    stats["score_count"] = {}
     for i in range(1, 11):
         count = len(user_game.where(UserGame.score == i))
         if count:
-            statistics["score_count"][i] = count
-    statistics["score_hours"] = {}
+            stats["score_count"][i] = count
+    stats["score_hours"] = {}
     for i in range(1, 11):
         hours = round(
             np.sum([ug.playtime for ug in user_game.where(UserGame.score == i)]) / 60
         )
         if hours != 0:
-            statistics["score_hours"][i] = hours
-    statistics["release_years_count"] = {}
-    statistics["release_years_hours"] = {}
-    statistics["release_years_mean"] = {}
+            stats["score_hours"][i] = hours
+    stats["release_years_count"] = {}
+    stats["release_years_hours"] = {}
+    stats["release_years_mean"] = {}
     for ug in user_game.where(UserGame.playtime > 0):
         if ug.game.release_date == None:
             continue
         year = ug.game.release_date.year
-        if year in statistics["release_years_count"]:
-            statistics["release_years_count"][year] += 1
-            statistics["release_years_hours"][year] += ug.playtime / 60
+        if year in stats["release_years_count"]:
+            stats["release_years_count"][year] += 1
+            stats["release_years_hours"][year] += ug.playtime / 60
         else:
-            statistics["release_years_count"][year] = 1
-            statistics["release_years_hours"][year] = ug.playtime / 60
+            stats["release_years_count"][year] = 1
+            stats["release_years_hours"][year] = ug.playtime / 60
 
     for ug in user_game.where(UserGame.score > 0):
         if ug.game.release_date == None:
             continue
         year = ug.game.release_date.year
-        if year in statistics["release_years_mean"]:
-            statistics["release_years_mean"][year].append(ug.score)
+        if year in stats["release_years_mean"]:
+            stats["release_years_mean"][year].append(ug.score)
         else:
-            statistics["release_years_mean"][year] = [ug.score]
-    for year in statistics["release_years_hours"]:
-        statistics["release_years_hours"][year] = round(
-            statistics["release_years_hours"][year]
+            stats["release_years_mean"][year] = [ug.score]
+    for year in stats["release_years_hours"]:
+        stats["release_years_hours"][year] = round(
+            stats["release_years_hours"][year]
         )
-    for year in statistics["release_years_mean"]:
-        statistics["release_years_mean"][year] = (
-            round(np.mean(statistics["release_years_mean"][year]) * 10) / 10
+    for year in stats["release_years_mean"]:
+        stats["release_years_mean"][year] = (
+            round(np.mean(stats["release_years_mean"][year]) * 10) / 10
         )
-    statistics["release_years_count"] = dict(
-        sorted(statistics["release_years_count"].items(), key=lambda x: x[0])
+    stats["release_years_count"] = dict(
+        sorted(stats["release_years_count"].items(), key=lambda x: x[0])
     )
-    statistics["release_years_hours"] = dict(
-        sorted(statistics["release_years_hours"].items(), key=lambda x: x[0])
+    stats["release_years_hours"] = dict(
+        sorted(stats["release_years_hours"].items(), key=lambda x: x[0])
     )
-    statistics["release_years_mean"] = dict(
-        sorted(statistics["release_years_mean"].items(), key=lambda x: x[0])
+    stats["release_years_mean"] = dict(
+        sorted(stats["release_years_mean"].items(), key=lambda x: x[0])
     )
-    return render_template("user/stats/overview.html", user=user, statistics=statistics)
+    return render_template("user/stats/overview.html", user=user, statistics=stats)
 
 
 developers_fix = {
@@ -107,10 +108,12 @@ developers_fix = {
 }
 
 
-def get_features_stats(user, feature_type):
+def get_features_stats(user, feature_type, exclude_without_score=False):
     user_game = (
         UserGame.select().where(UserGame.user == user).where(UserGame.playtime > 0)
     )
+    if exclude_without_score:
+        user_game = user_game.where(UserGame.score > 0)
     stats = {}
     for ug in user_game:
         match feature_type:
@@ -168,25 +171,34 @@ def get_features_stats(user, feature_type):
 @bp.route("/<username>/stats/genres")
 def genres(username: str):
     user = get_object_or_404(User, User.username == username)
-    stats = get_features_stats(user, "genre")
+    exclude_without_score = request.args.get("exclude_without_score", False)
+    exclude_without_score = exclude_without_score == "true"
+    stats = get_features_stats(user, "genre", exclude_without_score)
+    exclude_without_score = str(exclude_without_score).lower()
     return render_template(
-        "user/stats/features.html", user=user, title="Genres", stats=stats
+        "user/stats/features.html", user=user, title="Genres", stats=stats, exclude_without_score=exclude_without_score
     )
 
 
 @bp.route("/<username>/stats/tags")
 def tags(username: str):
     user = get_object_or_404(User, User.username == username)
-    stats = get_features_stats(user, "tag")
+    exclude_without_score = request.args.get("exclude_without_score", "")
+    exclude_without_score = exclude_without_score == "true"
+    stats = get_features_stats(user, "tag", exclude_without_score)
+    exclude_without_score = str(exclude_without_score).lower()
     return render_template(
-        "user/stats/features.html", user=user, title="Tags", stats=stats
+        "user/stats/features.html", user=user, title="Tags", stats=stats, exclude_without_score=exclude_without_score
     )
 
 
 @bp.route("/<username>/stats/developers")
 def developers(username: str):
     user = get_object_or_404(User, User.username == username)
-    stats = get_features_stats(user, "developer")
+    exclude_without_score = request.args.get("exclude_without_score", False)
+    exclude_without_score = exclude_without_score == "true"
+    stats = get_features_stats(user, "developer", exclude_without_score)
+    exclude_without_score = str(exclude_without_score).lower()
     return render_template(
-        "user/stats/features.html", user=user, title="Developers", stats=stats
+        "user/stats/features.html", user=user, title="Developers", stats=stats, exclude_without_score=exclude_without_score
     )

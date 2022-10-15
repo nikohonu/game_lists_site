@@ -84,3 +84,28 @@ section .card {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
 }
+
+.checkbox {
+    background: white;
+    margin-left: auto;
+    border-radius: 30px;
+    box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.2);
+    height: 27px;
+    display: flex;
+    margin-right: 16px;
+    align-items: center;
+}
+
+.switch {
+    background: white;
+    border-radius: 30px;
+    box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.switch.overview {
+    margin-left: auto;
+}
+
+.checkbox div {
+    padding: 12px;
+}

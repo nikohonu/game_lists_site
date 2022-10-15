@@ -149,12 +149,7 @@ footer {
     align-items: center;
 }
 
-.switch {
-    background: white;
-    margin-left: auto;
-    border-radius: 30px;
-    box-shadow: 1px 1px 1px 1px rgba(0, 0, 0, 0.2);
-}
+
 
 .options {
     display: flex;

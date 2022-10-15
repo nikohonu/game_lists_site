@@ -61,3 +61,13 @@ sortByTimeButton.onclick = function () {
     activate(sortByTimeButton);
     sortBy("playtime");
 }
+
+const checkbox = document.getElementById('hgws');
+checkbox.checked = (new URL(document.URL).searchParams.get("exclude_without_score") == 'true')
+
+checkbox.addEventListener('change', () => {
+    var url = new URL(document.URL);
+    url.searchParams.set('exclude_without_score', checkbox.checked);
+    console.log(url)
+    window.location.replace(url);
+});
