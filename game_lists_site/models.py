@@ -13,6 +13,7 @@ from peewee import (
     Model,
     PostgresqlDatabase,
     TextField,
+    BooleanField
 )
 
 user_data_dir = Path(user_data_dir(appauthor="Niko Honu", appname="game_lists_site"))
@@ -48,6 +49,7 @@ class Game(BaseModel):
     image_url = TextField(null=True)
     last_update_time = DateTimeField(null=True)
     rating = IntegerField(null=True)
+    free_to_play = BooleanField(default=False)
 
 
 class Developer(BaseModel):

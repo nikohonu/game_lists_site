@@ -11,6 +11,7 @@ from game_lists_site.utils.utils import (
     days_delta,
     get_cbr_for_user,
     get_game,
+    get_game_stats,
     get_hrs_for_user,
     get_mbcf_for_user,
     get_mobcf_for_user,
@@ -37,7 +38,6 @@ not_game_ids = [
     623990,
     700580,
 ]
-free_game_ids = [440, 570, 950670, 450390]
 
 bp = Blueprint("user", __name__, url_prefix="/user")
 
@@ -76,11 +76,6 @@ def games(username: str):
         for owned_game in owned_games:
             if owned_game["appid"] in not_game_ids:
                 continue
-            if (
-                owned_game["appid"] in free_game_ids
-                and owned_game["playtime_forever"] == 0
-            ):
-                continue
             game = get_game(owned_game["appid"])
             if not game:
                 continue
@@ -106,10 +101,12 @@ def games(username: str):
 @bp.route("/<username>/recommendations")
 def recommendations(username: str):
     user = get_object_or_404(User, User.username == username)
-    cbr_result = get_cbr_for_user(user, 9).keys()
+    played_user_games = (UserGame.select().where(UserGame.user == user).where(UserGame.playtime > 0))
+    cbr_result = get_cbr_for_user(user, played_user_games, 36)
     mbcf_result = get_mbcf_for_user(user, 9).keys()
     mobcf_result = get_mobcf_for_user(user, 9).keys()
-    hrs_result = get_hrs_for_user(user, 9).keys()
+    hrs_result = get_hrs_for_user(user, played_user_games, cbr_result, 9).keys()
+    cbr_result = list(get_cbr_for_user(user, played_user_games, 36).keys())[:9]
     return render_template(
         "user/recommendations.html",
         user=user,

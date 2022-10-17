@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "game-lists-site"
-version = "0.26.0"
+version = "0.27.0"
 description = "game lists site"
 authors = ["nikohonu <nikohonu@gmail.com>"]
 license = "MIT"
@@ -30,6 +30,7 @@ snakeviz = "^2.1.1"
 isort = "^5.10.1"
 ipykernel = "^6.16.0"
 djlint = "^1.19.0"
+py-heat-magic = "^0.0.2"
 
 [build-system]
 requires = ["poetry-core"]
