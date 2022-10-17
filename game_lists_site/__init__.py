@@ -32,7 +32,31 @@ def create_app(test_config=None):
             else:
                 return f"{round_hours}h"
 
-        return dict(prettify_playtime=prettify_playtime)
+        def prettify_playtime_with_days(minutes: int):
+            minutes = int(minutes)
+            hours = int(minutes / 60.0)
+            days = int(hours / 24.0)
+            years = int(days / 365.25)
+            if minutes < 60:
+                return f"{minutes}m"
+            elif hours <= 5:
+                return f"{hours}h {minutes - hours * 60}m"
+            elif hours <= 1000:
+                return f"{hours}h"
+            elif days <= 365:
+                return f"{days}d"
+            else:
+                return f"{years}y"
+
+            # elif days <= 365:
+                # return f"{days}d"
+            # else:
+            #     return f"{years}y"
+
+        return dict(
+            prettify_playtime=prettify_playtime,
+            prettify_playtime_with_days=prettify_playtime_with_days,
+        )
 
     if test_config is None:
         # ./instance/config.py

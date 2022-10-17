@@ -24,7 +24,7 @@
         <td>{{ prettify_playtime(gs.median_playtime) }}</td>
         <td>{{ prettify_playtime(gs.max_playtime) }}</td>
         <td>{{ prettify_playtime(gs.min_playtime) }}</td>
-        <td>{{ prettify_playtime(gs.total_playtime) }}</td>
+        <td>{{ prettify_playtime_with_days(gs.total_playtime) }}</td>
         <td>{{ gs.player_count }}</td>
         <td>{{ ((gs.rating*100)|int)/100 }}</td>
     </tr>

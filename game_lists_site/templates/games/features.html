@@ -1,4 +1,4 @@
-{% extends "user/stats/base.html" %}
+{% extends "games/base_stats.html" %}
 {% block stats_content %}
 <div class="header">
     <h2>{{ title }}</h2>
@@ -36,7 +36,7 @@
                 <div>Mean Score</div>
             </div>
             <div>
-                <div class="data">{{ prettify_playtime(data['playtime']) }}</div>
+                <div class="data">{{ prettify_playtime_with_days(data['playtime']) }}</div>
                 <div>Playtime</div>
             </div>
         </div>
