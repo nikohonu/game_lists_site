@@ -36,8 +36,7 @@ from game_lists_site.models import (
 def days_delta(datetime):
     if not datetime:
         return float("inf")
-    current_date = dt.datetime.now()
-    return (current_date - datetime).days
+    return (dt.datetime.now() - datetime).days
 
 
 def get_game(game_id: int):
@@ -134,9 +133,11 @@ def get_game_stats(game: Game):
     return game_stats
 
 
-def get_cbr_for_game(game, result_count=9, min_player_count=10):
+def get_cbr_for_game(game, result_count=9, min_player_count=28):
     system, _ = System.get_or_create(key="GameCBR")
     if not system.date_time_value or days_delta(system.date_time_value) >= 7:
+        GameCBR.delete().execute()
+        print("get_cbr_for_game")
         games = []
         features = []
         for gs in GameStats.select(GameStats.game, GameStats.features).where(
@@ -150,7 +151,7 @@ def get_cbr_for_game(game, result_count=9, min_player_count=10):
         for g_a, row in zip(games, csr):
             l = 0
             precision = 0.7
-            while l < 50:
+            while l < max(28, result_count): # this
                 result = dict(
                     sorted(
                         [
@@ -180,15 +181,18 @@ def get_cbr_for_game(game, result_count=9, min_player_count=10):
         return {}
 
 
-def get_cbr_for_user(user, played_user_games, result_count=9, cbr_for_game_result_count = 6):
+def get_cbr_for_user(user, result_count=36):
     if not user.last_cbr_update_time or days_delta(user.last_cbr_update_time) >= 7:
         print("get_cbr_for_user")
+        played_user_games = UserGame.select(UserGame.game, UserGame.last_played, UserGame.score).where(
+            (UserGame.user == user) & (UserGame.playtime > 0)
+        )
         played_games = [ug.game for ug in played_user_games]
         user_games_with_score = played_user_games.where(UserGame.score != None)
         games_with_score = [ug.game for ug in user_games_with_score]
         result = {}
         for user_game, game_cbr_result in zip(
-            user_games_with_score, [get_cbr_for_game(g, cbr_for_game_result_count) for g in games_with_score]
+            user_games_with_score, [get_cbr_for_game(g, 3) for g in games_with_score]
         ):
             if game_cbr_result:
                 for sim_game in game_cbr_result:
@@ -220,30 +224,27 @@ def get_cbr_for_user(user, played_user_games, result_count=9, cbr_for_game_resul
 def get_normalized_playtimes(min_player_count=5, normalize=True, zscore_norm=False):
     system, _ = System.get_or_create(key="NormalizedPlaytime")
     if not system.date_time_value or days_delta(system.date_time_value) >= 7:
+        print("get_normalized_playtimes", min_player_count, normalize, zscore_norm)
         games = [
-            game
-            for game in Game.select()
-            if get_game_stats(game).player_count >= min_player_count
+            gs.game
+            for gs in GameStats.select(GameStats.game).where(
+                GameStats.player_count >= min_player_count
+            )
         ]
+        users_games = (
+            UserGame.select(UserGame.playtime, UserGame.user)
+            .where(UserGame.playtime > 0))
         result = {}
         for game in games:
-            user_games = (
-                UserGame.select()
-                .where(UserGame.game == game)
-                .where(UserGame.playtime > 0)
-            )
-            playtimes = [user_game.playtime for user_game in user_games]
-            normalized_playtimes = []
+            users_game = users_games.where(UserGame.game == game)
+            playtimes = [user_game.playtime for user_game in users_game]
             if normalize:
                 if zscore_norm:
-                    normalized_playtimes = stats.zscore(playtimes)
+                    playtimes = stats.zscore(playtimes)
                 else:
-                    normalized_playtimes = preprocessing.normalize([playtimes])[0]
-            else:
-                normalized_playtimes = playtimes
+                    playtimes = preprocessing.normalize([playtimes])[0]
             result[game.id] = {
-                ug.user.id: normalized_playtime
-                for ug, normalized_playtime in zip(user_games, normalized_playtimes)
+                ug.user.id: playtime for ug, playtime in zip(users_game, playtimes)
             }
         with (user_data_dir / "normalized_playtimes.json").open("w") as data_file:
             json.dump(result, data_file)
@@ -261,16 +262,25 @@ def get_normalized_playtimes(min_player_count=5, normalize=True, zscore_norm=Fal
 
 def get_mbcf_for_user(
     target_user,
-    max_count=-1,
-    max_player_count=16,
+    max_count=9,
+    min_player_count=10,
+    min_game_count=20,
     normalize=True,
-    corrcoef=True,
+    zscore_norm=False,
+    corrcoef=False,
     sim_user_count=9,
 ):
     system, _ = System.get_or_create(key="UserMBCF")
     if not system.date_time_value or days_delta(system.date_time_value) >= 7:
-        normalized_playtimes = get_normalized_playtimes(max_player_count, normalize)
-        games = Game.select()
+        normalized_playtimes = get_normalized_playtimes(
+            min_player_count, normalize, zscore_norm
+        )
+        games = [
+            gs.game
+            for gs in GameStats.select(GameStats.game).where(
+                GameStats.player_count >= min_player_count
+            )
+        ]
         users = [
             user
             for user in User.select()
@@ -279,7 +289,7 @@ def get_mbcf_for_user(
                 .where(UserGame.user == user)
                 .where(UserGame.playtime != None)
             )
-            >= 10
+            >= min_game_count
         ]
         game_vecs = []
         for game in games:
@@ -288,7 +298,7 @@ def get_mbcf_for_user(
             game_vec = {user: 0 for user in users}
             user_games = [
                 ug
-                for ug in UserGame.select().where(UserGame.game == game)
+                for ug in UserGame.select(UserGame.user).where(UserGame.game == game)
                 if normalized_playtimes[game.id].get(ug.user.id)
             ]
             for ug in user_games:
@@ -318,27 +328,23 @@ def get_mbcf_for_user(
             print(f"{i/count*100:.2f}%", end="")
             print("\r", end="")
             i += 1
-            played_games = set()
+            played_games = []
             played_user_games = (
                 UserGame.select()
                 .where(UserGame.user == user_a)
                 .where(UserGame.playtime > 0)
             )
-            if len(played_user_games) > 1:
-                quantile = np.quantile(
-                    [ug.last_played for ug in played_user_games], 0.10
-                )
-                check_user_games = [
-                    ug for ug in played_user_games if ug.last_played <= quantile
-                ]
-                for ug in played_user_games:
-                    if ug not in check_user_games:
-                        played_games.add(ug.game)
-                played_games = list(played_games)
+            # if len(played_user_games) > 1:
+            #     last_played = np.quantile(
+            #         [ug.last_played for ug in played_user_games], 0.8
+            #     )
+            #     played_games = [ug for ug in played_user_games.where(UserGame.last_played < last_played)]
+            # else:
+            played_games = [ug.game for ug in played_user_games]
             games = {}
             for user_b, value in sim.items():
                 for user_game in (
-                    UserGame.select()
+                    UserGame.select(UserGame.game, UserGame.playtime, UserGame.user)
                     .where(UserGame.user == user_b)
                     .where(UserGame.playtime != None)
                 ):
@@ -370,10 +376,7 @@ def get_mbcf_for_user(
             Game.get_by_id(game_id): value
             for game_id, value in json.loads(user_mbcf.data).items()
         }
-        if len(data) > max_count:
-            return dict(list(data.items())[:max_count])
-        else:
-            return data
+        return dict(list(data.items())[:max_count])
     else:
         return {}
 
@@ -582,7 +585,6 @@ def merge_dicts(dicts: list):
 def normalize_dict(dict_data: dict, coef: float = 1):
     values = list(dict_data.values())
     values = preprocessing.normalize([values])[0] * coef
-    print(type(values))
     return {k: v for k, v in zip(dict_data, values)}
 
 

@@ -4,6 +4,7 @@ from appdirs import user_data_dir
 from peewee import (
     AutoField,
     BigIntegerField,
+    BooleanField,
     CompositeKey,
     DateField,
     DateTimeField,
@@ -13,7 +14,6 @@ from peewee import (
     Model,
     PostgresqlDatabase,
     TextField,
-    BooleanField
 )
 
 user_data_dir = Path(user_data_dir(appauthor="Niko Honu", appname="game_lists_site"))
@@ -39,6 +39,7 @@ class User(BaseModel):
     last_update_time = DateTimeField(null=True)
     last_games_update_time = DateTimeField(null=True)
     last_cbr_update_time = DateTimeField(null=True)
+    last_benchmark_cbr_update_time = DateTimeField(null=True)
 
 
 class Game(BaseModel):
@@ -113,6 +114,11 @@ class GameCBR(BaseModel):
 
 
 class UserCBR(BaseModel):
+    user = ForeignKeyField(User, on_delete="CASCADE", primary_key=True)
+    data = TextField(null=True)
+
+
+class BenchmarkUserCBR(BaseModel):
     user = ForeignKeyField(User, on_delete="CASCADE", primary_key=True)
     data = TextField(null=True)
 

@@ -37,6 +37,31 @@ not_game_ids = [
     607380,
     623990,
     700580,
+    585281,
+    585282,
+    585283,
+    585280,
+    497813,
+    413851,
+    413852,
+    413854,
+    413855,
+    413856,
+    413857,
+    413858,
+    413859,
+    458250,
+    458260,
+    458270,
+    458280,
+    458300,
+    458310,
+    458320,
+    497810,
+    497811,
+    497812,
+    413850,
+    413853,
 ]
 
 bp = Blueprint("user", __name__, url_prefix="/user")
@@ -102,11 +127,12 @@ def games(username: str):
 def recommendations(username: str):
     user = get_object_or_404(User, User.username == username)
     played_user_games = (UserGame.select().where(UserGame.user == user).where(UserGame.playtime > 0))
-    cbr_result = get_cbr_for_user(user, played_user_games, 36)
-    mbcf_result = get_mbcf_for_user(user, 9).keys()
+    cbr_result = get_cbr_for_user(user, played_user_games, 36, 3, 21)
+    # mbcf_result = get_mbcf_for_user(user, 9).keys()
+    mbcf_result = get_mbcf_for_user(user, 20, 21, 50, True, False, True, 38)
     mobcf_result = get_mobcf_for_user(user, 9).keys()
     hrs_result = get_hrs_for_user(user, played_user_games, cbr_result, 9).keys()
-    cbr_result = list(get_cbr_for_user(user, played_user_games, 36).keys())[:9]
+    cbr_result = list(cbr_result.keys())[:9]
     return render_template(
         "user/recommendations.html",
         user=user,
