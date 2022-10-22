@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 from appdirs import user_data_dir
 from peewee import (
@@ -14,7 +15,17 @@ from peewee import (
     Model,
     PostgresqlDatabase,
     TextField,
+    Field
 )
+
+class JsonField(Field):
+    field_type = 'json'
+
+    def db_value(self, value):
+        return json.dumps(value)
+
+    def python_value(self, value):
+        return value
 
 user_data_dir = Path(user_data_dir(appauthor="Niko Honu", appname="game_lists_site"))
 user_data_dir.mkdir(exist_ok=True, parents=True)
@@ -40,7 +51,8 @@ class User(BaseModel):
     last_games_update_time = DateTimeField(null=True)
     last_cbr_update_time = DateTimeField(null=True)
     last_benchmark_cbr_update_time = DateTimeField(null=True)
-
+    last_mbcf_update_time = DateTimeField(null=True)
+    last_benchmark_mbcf_update_time = DateTimeField(null=True)
 
 class Game(BaseModel):
     id = BigIntegerField(primary_key=True)
@@ -123,9 +135,24 @@ class BenchmarkUserCBR(BaseModel):
     data = TextField(null=True)
 
 
+class UserSimilarity(BaseModel):
+    user = ForeignKeyField(User, on_delete="CASCADE", primary_key=True)
+    data = JsonField(null=True)
+
+
+class BenchmarkUserSimilarity(BaseModel):
+    user = ForeignKeyField(User, on_delete="CASCADE", primary_key=True)
+    data = JsonField(null=True)
+
+
 class UserMBCF(BaseModel):
     user = ForeignKeyField(User, on_delete="CASCADE", primary_key=True)
     data = TextField(null=True)
+
+
+class BenchmarkUserMBCF(BaseModel):
+    user = ForeignKeyField(User, on_delete="CASCADE", primary_key=True)
+    data = JsonField(null=True)
 
 
 class GameMBCF(BaseModel):

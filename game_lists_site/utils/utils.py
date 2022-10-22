@@ -224,7 +224,6 @@ def get_cbr_for_user(user, result_count=36):
 def get_normalized_playtimes(min_player_count=5, normalize=True, zscore_norm=False):
     system, _ = System.get_or_create(key="NormalizedPlaytime")
     if not system.date_time_value or days_delta(system.date_time_value) >= 7:
-        print("get_normalized_playtimes", min_player_count, normalize, zscore_norm)
         games = [
             gs.game
             for gs in GameStats.select(GameStats.game).where(
