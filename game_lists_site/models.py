@@ -1,5 +1,6 @@
-from pathlib import Path
 import json
+from math import isnan
+from pathlib import Path
 
 from appdirs import user_data_dir
 from peewee import (
@@ -9,23 +10,32 @@ from peewee import (
     CompositeKey,
     DateField,
     DateTimeField,
+    Field,
     FloatField,
     ForeignKeyField,
     IntegerField,
     Model,
     PostgresqlDatabase,
     TextField,
-    Field
+    SQL,
 )
 
+
 class JsonField(Field):
-    field_type = 'json'
+    field_type = "text"
 
     def db_value(self, value):
-        return json.dumps(value)
+        if value:
+            return json.dumps(value, allow_nan=False)
+        else:
+            return None
 
     def python_value(self, value):
-        return value
+        if value:
+            return json.loads(value)
+        else:
+            return None
+
 
 user_data_dir = Path(user_data_dir(appauthor="Niko Honu", appname="game_lists_site"))
 user_data_dir.mkdir(exist_ok=True, parents=True)
@@ -54,15 +64,27 @@ class User(BaseModel):
     last_mbcf_update_time = DateTimeField(null=True)
     last_benchmark_mbcf_update_time = DateTimeField(null=True)
 
+
 class Game(BaseModel):
     id = BigIntegerField(primary_key=True)
-    name = TextField()
+    name = TextField(null=True)
     description = TextField(null=True)
-    release_date = DateField(null=True)
-    image_url = TextField(null=True)
-    last_update_time = DateTimeField(null=True)
-    rating = IntegerField(null=True)
+    features = TextField(null=True)
     free_to_play = BooleanField(default=False)
+    image_url = TextField(null=True)
+    max_playtime = IntegerField(default=0)
+    mean_playtime = FloatField(default=0)
+    median_playtime = FloatField(default=0)
+    min_playtime = IntegerField(default=0)
+    player_count = IntegerField(null=True)
+    playtime = IntegerField(default=0)
+    rating = IntegerField(null=True)
+    release_date = DateField(null=True)
+    score = FloatField(default=0)
+    cbr = JsonField(null=True)
+    mbcf = JsonField(null=True)
+    hr = JsonField(null=True)
+    last_update_time = DateTimeField(null=True)
 
 
 class Developer(BaseModel):
@@ -112,22 +134,24 @@ class UserGame(BaseModel):
     score = IntegerField(null=True)
 
     class Meta:
-        primary_key = CompositeKey("user", "game")
+        constraints = [SQL("UNIQUE (user_id, game_id)")]
+        # primary_key = CompositeKey("user", "game")
 
 
 class System(BaseModel):
     key = TextField(primary_key=True)
+    date_time = DateTimeField(null=True)
     date_time_value = DateTimeField(null=True)
 
 
 class GameCBR(BaseModel):
     game = ForeignKeyField(Game, on_delete="CASCADE", primary_key=True)
-    data = TextField(null=True)
+    data = JsonField(null=True)
 
 
 class UserCBR(BaseModel):
     user = ForeignKeyField(User, on_delete="CASCADE", primary_key=True)
-    data = TextField(null=True)
+    data = JsonField(null=True)
 
 
 class BenchmarkUserCBR(BaseModel):
@@ -147,7 +171,7 @@ class BenchmarkUserSimilarity(BaseModel):
 
 class UserMBCF(BaseModel):
     user = ForeignKeyField(User, on_delete="CASCADE", primary_key=True)
-    data = TextField(null=True)
+    data = JsonField(null=True)
 
 
 class BenchmarkUserMBCF(BaseModel):
@@ -171,6 +195,12 @@ class GameStats(BaseModel):
     min_playtime = FloatField(default=0)
     rating = FloatField(default=0)
     last_update_time = DateTimeField(null=True)
+
+
+class Parameters(BaseModel):
+    name = TextField(primary_key=True)
+    last = JsonField(null=True)
+    best = JsonField(null=True)
 
 
 models = BaseModel.__subclasses__()

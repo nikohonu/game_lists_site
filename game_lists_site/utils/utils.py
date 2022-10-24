@@ -5,10 +5,10 @@ from operator import itemgetter
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
+from sklearn import preprocessing
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from sklearn import preprocessing
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -29,6 +29,7 @@ from game_lists_site.models import (
     UserCBR,
     UserGame,
     UserMBCF,
+    UserSimilarity,
     user_data_dir,
 )
 
@@ -75,18 +76,18 @@ def get_game(game_id: int):
                 id=genre_dict["id"], name=genre_dict["description"]
             )
             if genre.id in genre_blacklist:
-                return None
+                continue
             if genre.id == 37:
-               game.free_to_play = True
+                game.free_to_play = True
             GameGenre.get_or_create(game=game, genre=genre)
         for tag_name in steam.get_app_tags(game.id):
             tag, _ = Tag.get_or_create(name=tag_name)
-
             GameTag.get_or_create(game=game, tag=tag)
         game.rating = steam.get_app_rating(game.id)
         game.last_update_time = dt.datetime.now()
         game.save()
     return game
+
 
 def get_game_stats(game: Game):
     game_stats = GameStats.get_or_none(GameStats.game == game)
@@ -102,7 +103,9 @@ def get_game_stats(game: Game):
         ]
         features += [
             game_genre.genre.name.replace(" ", "")
-            for game_genre in GameGenre.select(GameGenre.genre).where(GameGenre.game == game)
+            for game_genre in GameGenre.select(GameGenre.genre).where(
+                GameGenre.game == game
+            )
         ]
         features += [
             game_tag.tag.name.replace(" ", "")
@@ -110,13 +113,13 @@ def get_game_stats(game: Game):
         ]
         game_stats.features = " ".join(features)
         # features end
-        users_game = UserGame.select(UserGame.playtime, UserGame.score).where(UserGame.game == game)
+        users_game = UserGame.select(UserGame.playtime, UserGame.score).where(
+            UserGame.game == game
+        )
         users_game_with_playtime = users_game.where(UserGame.playtime > 0)
         users_game_with_score = users_game.where(UserGame.score > 0)
         game_stats.player_count = users_game_with_playtime.count()
-        playtimes = np.array(
-            [ug.playtime for ug in users_game_with_playtime]
-        )
+        playtimes = np.array([ug.playtime for ug in users_game_with_playtime])
         scores = np.array([ug.score for ug in users_game_with_score])
         if len(playtimes) > 0:
             game_stats.total_playtime = np.sum(playtimes)
@@ -137,7 +140,6 @@ def get_cbr_for_game(game, result_count=9, min_player_count=28):
     system, _ = System.get_or_create(key="GameCBR")
     if not system.date_time_value or days_delta(system.date_time_value) >= 7:
         GameCBR.delete().execute()
-        print("get_cbr_for_game")
         games = []
         features = []
         for gs in GameStats.select(GameStats.game, GameStats.features).where(
@@ -151,7 +153,7 @@ def get_cbr_for_game(game, result_count=9, min_player_count=28):
         for g_a, row in zip(games, csr):
             l = 0
             precision = 0.7
-            while l < max(28, result_count): # this
+            while l < max(28, result_count):  # this
                 result = dict(
                     sorted(
                         [
@@ -181,18 +183,25 @@ def get_cbr_for_game(game, result_count=9, min_player_count=28):
         return {}
 
 
-def get_cbr_for_user(user, result_count=36):
+def get_cbr_for_user(
+    user, result_count=-1, min_player_count=24, cbr_for_game_result_count=2
+):
     if not user.last_cbr_update_time or days_delta(user.last_cbr_update_time) >= 7:
-        print("get_cbr_for_user")
-        played_user_games = UserGame.select(UserGame.game, UserGame.last_played, UserGame.score).where(
-            (UserGame.user == user) & (UserGame.playtime > 0)
-        )
+        played_user_games = UserGame.select(
+            UserGame.game, UserGame.last_played, UserGame.score
+        ).where((UserGame.user == user) & (UserGame.playtime > 0))
+        last_played = np.quantile([ug.last_played for ug in played_user_games], 0.1)
+        played_user_games = played_user_games.where(UserGame.last_played >= last_played)
         played_games = [ug.game for ug in played_user_games]
-        user_games_with_score = played_user_games.where(UserGame.score != None)
+        user_games_with_score = played_user_games.where(UserGame.score > 0)
         games_with_score = [ug.game for ug in user_games_with_score]
         result = {}
         for user_game, game_cbr_result in zip(
-            user_games_with_score, [get_cbr_for_game(g, 3) for g in games_with_score]
+            user_games_with_score,
+            [
+                get_cbr_for_game(g, cbr_for_game_result_count, min_player_count)
+                for g in games_with_score
+            ],
         ):
             if game_cbr_result:
                 for sim_game in game_cbr_result:
@@ -206,176 +215,145 @@ def get_cbr_for_user(user, result_count=36):
                                 user_game.score * game_cbr_result[sim_game]
                             )
         user_cbr, _ = UserCBR.get_or_create(user=user)
-        user_cbr.data = json.dumps(normalize_dict(
-            dict(sorted(result.items(), key=lambda x: x[1], reverse=True)))
-        )
+        user_cbr.data = dict(sorted(result.items(), key=lambda x: x[1], reverse=True))
         user_cbr.save()
-        user.last_cbr_update_time = dt.datetime.now()
+        user.last_benchmark_cbr_update_time = dt.datetime.now()
         user.save()
-    data = {
-        Game.get_by_id(game_id): value
-        for game_id, value in json.loads(
-            UserCBR.get_or_none(UserCBR.user == user).data
-        ).items()
-    }
-    return dict(list(data.items())[:result_count])
-
-
-def get_normalized_playtimes(min_player_count=5, normalize=True, zscore_norm=False):
-    system, _ = System.get_or_create(key="NormalizedPlaytime")
-    if not system.date_time_value or days_delta(system.date_time_value) >= 7:
-        games = [
-            gs.game
-            for gs in GameStats.select(GameStats.game).where(
-                GameStats.player_count >= min_player_count
-            )
-        ]
-        users_games = (
-            UserGame.select(UserGame.playtime, UserGame.user)
-            .where(UserGame.playtime > 0))
-        result = {}
-        for game in games:
-            users_game = users_games.where(UserGame.game == game)
-            playtimes = [user_game.playtime for user_game in users_game]
-            if normalize:
-                if zscore_norm:
-                    playtimes = stats.zscore(playtimes)
-                else:
-                    playtimes = preprocessing.normalize([playtimes])[0]
-            result[game.id] = {
-                ug.user.id: playtime for ug, playtime in zip(users_game, playtimes)
-            }
-        with (user_data_dir / "normalized_playtimes.json").open("w") as data_file:
-            json.dump(result, data_file)
-        system.date_time_value = dt.datetime.now()
-        system.save()
-        return result
+    data = UserCBR.get_or_none(UserCBR.user == user).data
+    if data:
+        if result_count != -1:
+            return dict(list(data.items())[:result_count])
+        else:
+            return dict(list(data.items()))
     else:
-        with (user_data_dir / "normalized_playtimes.json").open() as data_file:
-            result = {
-                int(key_a): {int(key_b): value_b for key_b, value_b in value_a.items()}
-                for key_a, value_a in json.load(data_file).items()
-            }
-        return result
+        {}
 
 
-def get_mbcf_for_user(
-    target_user,
-    max_count=9,
-    min_player_count=10,
-    min_game_count=20,
-    normalize=True,
-    zscore_norm=False,
-    corrcoef=False,
-    sim_user_count=9,
-):
-    system, _ = System.get_or_create(key="UserMBCF")
-    if not system.date_time_value or days_delta(system.date_time_value) >= 7:
-        normalized_playtimes = get_normalized_playtimes(
-            min_player_count, normalize, zscore_norm
+def get_normalized_playtimes(min_player_count, normalize, zscore_norm):
+    games = [
+        gs.game
+        for gs in GameStats.select(GameStats.game).where(
+            GameStats.player_count >= min_player_count
         )
-        games = [
-            gs.game
-            for gs in GameStats.select(GameStats.game).where(
-                GameStats.player_count >= min_player_count
-            )
-        ]
-        users = [
-            user
-            for user in User.select()
-            if len(
-                UserGame.select()
-                .where(UserGame.user == user)
-                .where(UserGame.playtime != None)
-            )
-            >= min_game_count
-        ]
+    ]
+    users_games = UserGame.select(UserGame.playtime, UserGame.user).where(
+        UserGame.playtime > 0
+    )
+    result = {}
+    for game in games:
+        users_game = users_games.where(UserGame.game == game)
+        playtimes = [user_game.playtime for user_game in users_game]
+        if normalize:
+            if zscore_norm:
+                playtimes = stats.zscore(playtimes)
+            else:
+                playtimes = preprocessing.normalize([playtimes])[0]
+        result[game.id] = {
+            ug.user.id: playtime for ug, playtime in zip(users_game, playtimes)
+        }
+    return result
+
+
+def get_similar_users(
+    user,
+    normalized_playtimes,
+    max_count=-1,
+    corrcoef=False,
+):
+    system, _ = System.get_or_create(key="UserSimilarity")
+    if not system.date_time_value or days_delta(system.date_time_value) >= 7:
+        games = list(normalized_playtimes.keys())
+        users = {}
+        for game in normalized_playtimes.keys():
+            for u in normalized_playtimes[game].keys():
+                if u in users:
+                    users[u] += 1
+                else:
+                    users[u] = 1
+        users = [u for u, game_count in users.items() if game_count >= 10]
         game_vecs = []
         for game in games:
-            if not normalized_playtimes.get(game.id):
-                continue
-            game_vec = {user: 0 for user in users}
-            user_games = [
-                ug
-                for ug in UserGame.select(UserGame.user).where(UserGame.game == game)
-                if normalized_playtimes[game.id].get(ug.user.id)
-            ]
-            for ug in user_games:
-                if ug.user in game_vec:
-                    game_vec[ug.user] = normalized_playtimes[game.id].get(ug.user.id)
-            game_vecs.append(list(game_vec.values()))
+            game_vec = []
+            for u in users:
+                value = normalized_playtimes[game].get(u)
+                game_vec.append(value if value else 0)
+            game_vecs.append(game_vec)
         game_vecs = np.array(game_vecs, dtype=np.float32)
         user_vecs = np.flip(np.rot90(game_vecs), 0)
         if corrcoef:
             user_vecs = np.corrcoef(user_vecs)
         else:
             user_vecs = cosine_similarity(user_vecs)
-        sim_users = {}
-        for user, user_vec in zip(users, user_vecs):
-            result = {}
-            for u, sim in zip(users, user_vec):
-                result[u] = float(sim)
-            result = dict(
-                sorted(result.items(), key=lambda x: x[1], reverse=True)[
-                    1 : sim_user_count + 1
-                ]
+        users_sim = {}
+        UserSimilarity.delete().execute()
+        for u_a, user_vec in zip(users, user_vecs):
+            result = []
+            for u_b, value in zip(users, user_vec):
+                result.append((u_b, float(value)))
+            UserSimilarity.create(
+                user=User.get_by_id(u_a),
+                data=dict(sorted(result, key=lambda x: x[1], reverse=True)),
             )
-            sim_users[user] = result
-        i = 0
-        count = len(sim_users)
-        for user_a, sim in sim_users.items():
-            print(f"{i/count*100:.2f}%", end="")
-            print("\r", end="")
-            i += 1
-            played_games = []
-            played_user_games = (
-                UserGame.select()
-                .where(UserGame.user == user_a)
-                .where(UserGame.playtime > 0)
-            )
-            # if len(played_user_games) > 1:
-            #     last_played = np.quantile(
-            #         [ug.last_played for ug in played_user_games], 0.8
-            #     )
-            #     played_games = [ug for ug in played_user_games.where(UserGame.last_played < last_played)]
-            # else:
-            played_games = [ug.game for ug in played_user_games]
-            games = {}
-            for user_b, value in sim.items():
-                for user_game in (
-                    UserGame.select(UserGame.game, UserGame.playtime, UserGame.user)
-                    .where(UserGame.user == user_b)
-                    .where(UserGame.playtime != None)
-                ):
-                    game = user_game.game
-                    user = user_game.user
-                    if (
-                        game not in played_games
-                        and game.id in normalized_playtimes
-                        and user.id in normalized_playtimes[game.id]
-                        and game.rating >= 7
-                    ):
-                        if game.id in games:
-                            games[game.id] += (
-                                normalized_playtimes[game.id].get(user.id) * value
-                            )
-                        else:
-                            games[game.id] = (
-                                normalized_playtimes[game.id].get(user.id) * value
-                            )
-            games = dict(sorted(games.items(), key=lambda x: x[1], reverse=True))
-            user_mbcf, _ = UserMBCF.get_or_create(user=user_a)
-            user_mbcf.data = json.dumps(games)
-            user_mbcf.save()
         system.date_time_value = dt.datetime.now()
         system.save()
-    user_mbcf = UserMBCF.get_or_none(UserMBCF.user == target_user)
+    user_similarity = UserSimilarity.get_or_none(UserSimilarity.user == user)
+    if user_similarity:
+        if max_count == -1:
+            return user_similarity.data
+        else:
+            return dict(list(user_similarity.data.items())[1 : max_count + 1])
+    else:
+        return {}
+
+
+def get_mbcf_for_user(
+    user,
+    max_count=-1,
+    min_player_count=39,
+    sim_user_count=36,
+    zscore_norm=False,
+    corrcoef=True,
+):
+    if not user.last_mbcf_update_time or days_delta(user.last_mbcf_update_time) >= 7:
+        normalized_playtimes = get_normalized_playtimes(
+            min_player_count, True, zscore_norm
+        )
+        users_sim = get_similar_users(
+            user, normalized_playtimes, sim_user_count, corrcoef
+        )
+        played_user_games = UserGame.select(
+            UserGame.game, UserGame.last_played, UserGame.score
+        ).where((UserGame.user == user) & (UserGame.playtime > 0))
+        last_played = np.quantile([ug.last_played for ug in played_user_games], 0.8)
+        played_user_games = played_user_games.where(UserGame.last_played < last_played)
+        played_games = [ug.game for ug in played_user_games]
+        played_game_ids = [g.id for g in played_games]
+        result = {}
+        for game_id in normalized_playtimes.keys():
+            if game_id not in played_game_ids:
+                for user_id, value in users_sim.items():
+                    pt = normalized_playtimes[game_id].get(int(user_id))
+                    if pt:
+                        if game_id in result:
+                            result[game_id] += pt * value
+                        else:
+                            result[game_id] = pt * value
+        user_mbcf, _ = UserMBCF.get_or_create(
+            user=user,
+        )
+        user_mbcf.data = dict(sorted(result.items(), key=lambda x: x[1], reverse=True))
+        user_mbcf.save()
+        user.last_mbcf_update_time = dt.datetime.now()
+        user.save()
+    user_mbcf = UserMBCF.get_or_none(UserMBCF.user == user)
     if user_mbcf:
         data = {
-            Game.get_by_id(game_id): value
-            for game_id, value in json.loads(user_mbcf.data).items()
+            Game.get_by_id(int(key)): value for key, value in user_mbcf.data.items()
         }
-        return dict(list(data.items())[:max_count])
+        if max_count == -1:
+            return data
+        else:
+            return dict(list(data.items())[:max_count])
     else:
         return {}
 
@@ -587,17 +565,23 @@ def normalize_dict(dict_data: dict, coef: float = 1):
     return {k: v for k, v in zip(dict_data, values)}
 
 
-def get_hrs_for_user(target_user, played_user_games, cbr_result, max_count=9):
-    mbcf_result = get_mbcf_for_user(target_user, 36)
-    mobcf_result = get_mobcf_for_user(target_user, 36)
+def get_hrs_for_user(
+    target_user, max_count=-1, cbr_coef=0.27, mbcf_coef=0.95, mobcf_coef=0.62
+):
+    cbr_result = get_cbr_for_user(target_user)
+    mbcf_result = get_mbcf_for_user(target_user)
+    mobcf_result = get_mobcf_for_user(target_user)
     result = merge_dicts(
         [
-            normalize_dict(cbr_result, 0.5),
-            normalize_dict(mbcf_result, 0.5),
-            normalize_dict(mobcf_result, 0.5),
+            normalize_dict(cbr_result, cbr_coef),
+            normalize_dict(mbcf_result, mbcf_coef),
+            normalize_dict(mobcf_result, mobcf_coef),
         ]
     )
-    return {k: v for k, v in list(result.items())[:max_count]}
+    if max_count == -1:
+        return result
+    else:
+        return {k: v for k, v in list(result.items())[:max_count]}
 
 def get_hrs_for_game(target_game, max_count=9):
     cbr_result = get_cbr_for_game(target_game, 36)

@@ -71,7 +71,6 @@ def get_app_tags(app_id):
 
 def get_app_rating(app_id):
     print("call get_app_rating")
-    print(app_id)
     response = get(f"https://store.steampowered.com/app/{app_id}")
     bs = BeautifulSoup(response.text, "html.parser")
     result = bs.find_all("meta", {"itemprop": "ratingValue"})

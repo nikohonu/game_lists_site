@@ -17,6 +17,11 @@ from game_lists_site.utils.utils import (
     get_mobcf_for_user,
 )
 
+from game_lists_site.utilities import (
+    update_game,
+    update_game_stats
+)
+
 not_game_ids = [
     202090,
     205790,
@@ -96,14 +101,14 @@ def games(username: str):
             ug.save()
             return jsonify({"id": id, "score": score})
     user = get_object_or_404(User, User.username == username)
-    if not user.last_games_update_time or days_delta(user.last_games_update_time) >= 1:
+    if days_delta(user.last_games_update_time) >= 1:
         owned_games = steam.get_owned_games(user.id)
         for owned_game in owned_games:
             if owned_game["appid"] in not_game_ids:
                 continue
-            game = get_game(owned_game["appid"])
-            if not game:
+            if not update_game(owned_game["appid"]):
                 continue
+            game = Game.get_by_id(owned_game["appid"])
             last_played = (
                 None
                 if owned_game["rtime_last_played"] == 0
@@ -115,24 +120,28 @@ def games(username: str):
             user_game.save()
         user.last_games_update_time = dt.datetime.now()
         user.save()
+        games = Game.select().join(UserGame).where(UserGame.user == user)
+        for game in games:
+            update_game_stats(game)
     user_games = (
         UserGame.select()
         .where(UserGame.user == user)
         .order_by(UserGame.playtime.desc())
     )
+
     return render_template("user/games.html", user_games=user_games, user=user)
 
 
 @bp.route("/<username>/recommendations")
 def recommendations(username: str):
     user = get_object_or_404(User, User.username == username)
-    played_user_games = (UserGame.select().where(UserGame.user == user).where(UserGame.playtime > 0))
-    cbr_result = get_cbr_for_user(user, played_user_games, 36, 3, 21)
-    # mbcf_result = get_mbcf_for_user(user, 9).keys()
-    mbcf_result = get_mbcf_for_user(user, 20, 21, 50, True, False, True, 38)
-    mobcf_result = get_mobcf_for_user(user, 9).keys()
-    hrs_result = get_hrs_for_user(user, played_user_games, cbr_result, 9).keys()
-    cbr_result = list(cbr_result.keys())[:9]
+    played_user_games = (
+        UserGame.select().where(UserGame.user == user).where(UserGame.playtime > 0)
+    )
+    hrs_result = get_hrs_for_user(user).keys()
+    cbr_result = get_cbr_for_user(user).keys()
+    mbcf_result = get_mbcf_for_user(user).keys()
+    mobcf_result = get_mobcf_for_user(user).keys()
     return render_template(
         "user/recommendations.html",
         user=user,
