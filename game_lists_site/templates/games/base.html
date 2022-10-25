@@ -1,7 +1,5 @@
 {% extends "base.html" %}
 
-{% set nav = ({"Overview":"games", "Stats": "stats"}) %}
-
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='games.css') }}" />
 <link rel="stylesheet"
@@ -22,13 +20,13 @@ href="{{ url_for('static', filename='user/stats.css') }}">
         </h1>
         <nav>
             <div class="nav-center">
-                {% for key, value in nav.items() %}
-                {% if url_for(request.endpoint) == url_for('games.' + value) %}
-                <a href="{{ url_for('games.' + value) }}" class="nav-link-active">{{ key }}</a>
+                {% if url_for(request.endpoint) == url_for('games.games') %}
+                <a href="{{ url_for('games.games') }}" class="nav-link-active">Overview</a>
+                <a href="{{ url_for('games.stats') }}">Stats</a>
                 {% else %}
-                <a href="{{ url_for('games.' + value) }}">{{ key }}</a>
+                <a href="{{ url_for('games.games') }}">Overview</a>
+                <a href="{{ url_for('games.stats') }}" class="nav-link-active">Stats</a>
                 {% endif %}
-                {% endfor %}
             </div>
         </nav>
     </div>

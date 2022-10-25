@@ -2,14 +2,7 @@ import numpy as np
 from flask import Blueprint, jsonify, render_template, request
 from peewee import fn
 
-from game_lists_site.models import (
-    Game,
-    GameDeveloper,
-    GameGenre,
-    GameStats,
-    GameTag,
-    UserGame,
-)
+from game_lists_site.models import Game, GameDeveloper, GameGenre, GameTag, UserGame
 from game_lists_site.utils.utils import get_game_stats
 
 bp = Blueprint("games", __name__, url_prefix="/games")
@@ -17,19 +10,30 @@ bp = Blueprint("games", __name__, url_prefix="/games")
 
 @bp.route("/")
 def games():
-    for game in Game.select():
-        get_game_stats(game)
-    game_stats = list(GameStats.select().where(GameStats.player_count > 0))
-    game_stats = sorted(game_stats, key=lambda x: x.player_count, reverse=True)
-    game_stats = sorted(game_stats, key=lambda x: x.rating, reverse=True)[:40]
-    return render_template("games/games.html", game_stats=game_stats)
+    games = list(
+        Game.select(
+            Game.id,
+            Game.player_count,
+            Game.score,
+            Game.name,
+            Game.mean_playtime,
+            Game.median_playtime,
+            Game.max_playtime,
+            Game.min_playtime,
+            Game.playtime,
+            Game.image_url,
+        ).where(Game.player_count > 0)
+    )
+    games = sorted(games, key=lambda x: x.player_count, reverse=True)
+    games = sorted(games, key=lambda x: x.score, reverse=True)[:40]
+    return render_template("games/games.html", games=games)
 
 
 @bp.route("stats")
 def stats():
     stats = {}
     user_game = UserGame.select(UserGame.playtime, UserGame.score)
-    games = Game.select()
+    games = Game.select(Game.id, Game.release_date)
     user_game_with_playtime = user_game.where(UserGame.playtime > 0)
     user_game_with_scores = user_game.where(UserGame.score > 0)
     games_with_release_date = games.where(Game.release_date != None)
@@ -69,7 +73,6 @@ def stats():
             stats["release_years_hours"][year] += playtime
             stats["release_years_mean"][year] += scores
             if scores:
-                print(scores)
                 stats["release_years_mean"][year] += scores
         else:
             stats["release_years_count"][year] = 1
@@ -117,18 +120,18 @@ developers_fix = {
 
 
 def get_features_stats(feature_type, exclude_without_score=False):
-    game_stats = GameStats.select().where(GameStats.total_playtime > 0)
+    games = Game.select().where(Game.playtime > 0)  # fix
     if exclude_without_score:
-        game_stats = game_stats.where(GameStats.rating > 0)
+        games = games.where(Game.score > 0)
     stats = {}
-    for gs in game_stats:
+    for g in games:
         match feature_type:
             case "genre":
-                game_feature = GameGenre.select().where(GameGenre.game == gs.game)
+                game_feature = GameGenre.select().where(GameGenre.game == g)
             case "tag":
-                game_feature = GameTag.select().where(GameTag.game == gs.game)
+                game_feature = GameTag.select().where(GameTag.game == g)
             case "developer":
-                game_feature = GameDeveloper.select().where(GameDeveloper.game == gs.game)
+                game_feature = GameDeveloper.select().where(GameDeveloper.game == g)
         for gg in game_feature:
             match feature_type:
                 case "genre":
@@ -145,21 +148,21 @@ def get_features_stats(feature_type, exclude_without_score=False):
             if unified_feature_name not in stats:
                 stats[unified_feature_name] = {}
                 stats[unified_feature_name]["name"] = feature_name
-                stats[unified_feature_name]["games"] = {gs}
+                stats[unified_feature_name]["games"] = {g}
             else:
-                stats[unified_feature_name]["games"].add(gs)
+                stats[unified_feature_name]["games"].add(g)
     user_game = UserGame.select().where(UserGame.score != 0)
     for feature in stats:
         stats[feature]["count"] = len(stats[feature]["games"])
         scores = []
-        for g in [gs.game for gs in stats[feature]["games"] if gs.rating > 0]:
+        for g in [g for g in stats[feature]["games"] if g.score > 0]:
             scores += [ug.score for ug in user_game.where(UserGame.game == g)]
         if scores:
             stats[feature]["score"] = round(np.mean(scores) * 100) / 100
         else:
             stats[feature]["score"] = 0
         stats[feature]["playtime"] = np.sum(
-            [gs.total_playtime for gs in stats[feature]["games"]]
+            [g.playtime for g in stats[feature]["games"]]
         )
     stats = dict(
         sorted(
@@ -170,7 +173,7 @@ def get_features_stats(feature_type, exclude_without_score=False):
     )
     for feature in stats:
         stats[feature]["games"] = sorted(
-            stats[feature]["games"], key=lambda x: x.total_playtime, reverse=True
+            stats[feature]["games"], key=lambda x: x.playtime, reverse=True
         )
     return stats
 
@@ -182,8 +185,12 @@ def genres():
     stats = get_features_stats("genre", exclude_without_score)
     exclude_without_score = str(exclude_without_score).lower()
     return render_template(
-        "games/features.html", title="Genres", stats=stats, exclude_without_score=exclude_without_score
+        "games/features.html",
+        title="Genres",
+        stats=stats,
+        exclude_without_score=exclude_without_score,
     )
+
 
 @bp.route("stats/tags")
 def tags():
@@ -192,8 +199,12 @@ def tags():
     stats = get_features_stats("tag", exclude_without_score)
     exclude_without_score = str(exclude_without_score).lower()
     return render_template(
-        "games/features.html", title="Tags", stats=stats, exclude_without_score=exclude_without_score
+        "games/features.html",
+        title="Tags",
+        stats=stats,
+        exclude_without_score=exclude_without_score,
     )
+
 
 @bp.route("stats/developers")
 def developers():
@@ -202,5 +213,8 @@ def developers():
     stats = get_features_stats("developer", exclude_without_score)
     exclude_without_score = str(exclude_without_score).lower()
     return render_template(
-        "games/features.html", title="Developers", stats=stats, exclude_without_score=exclude_without_score
+        "games/features.html",
+        title="Developers",
+        stats=stats,
+        exclude_without_score=exclude_without_score,
     )

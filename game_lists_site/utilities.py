@@ -3,8 +3,6 @@ import datetime as dt
 import numpy as np
 import scipy.stats as stats
 from sklearn import preprocessing
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 import game_lists_site.utils.steam as steam
 from game_lists_site.models import (
@@ -15,11 +13,85 @@ from game_lists_site.models import (
     GameTag,
     Genre,
     Parameters,
-    System,
     Tag,
     UserGame,
-    db,
 )
+
+not_game_ids = [
+    202090,
+    205790,
+    214850,
+    217490,
+    225140,
+    226320,
+    239450,
+    250820,
+    285030,
+    310380,
+    323370,
+    36700,
+    388080,
+    404790,
+    41010,
+    413850,
+    413851,
+    413852,
+    413853,
+    413854,
+    413855,
+    413856,
+    413857,
+    413858,
+    413859,
+    431960,
+    458250,
+    458260,
+    458270,
+    458280,
+    458300,
+    458310,
+    458320,
+    497810,
+    497811,
+    497812,
+    497813,
+    585280,
+    585281,
+    585282,
+    585283,
+    607380,
+    623990,
+    700580,
+]
+
+class ParametersManager:
+    def __init__(self, name, current_parameters, best) -> None:
+        self.p, _ = Parameters.get_or_create(name=name)
+        self.cp = current_parameters
+        if not self.p.best:
+            self.best = best
+        for key, value in self.p.best.items():
+            if key not in self.cp:
+                self.cp[key] = value
+
+    def is_diff_last_current(self):
+        diff = False
+        if not self.p.last:
+            return True
+        for key, value in self.p.last.items():
+            if self.cp[key] != value:
+                diff = True
+        return diff
+
+    def __getitem__(self, value):
+        return self.cp[value]
+
+    def set_best_parameter(self, best: dict):
+        self.p.best = best
+
+    def __del__(self):
+        self.p.last = self.cp
+        self.p.save()
 
 
 def merge_dicts(dicts: list):
@@ -74,7 +146,9 @@ developers_fix = {
 def update_game(game_id: int):
     game = Game.get_or_none(Game.id == game_id)
     if game == None or days_delta(game.last_update_time) > 30:
-        print("Update game")
+        print("update game")
+        if game_id in not_game_ids:
+            return None
         data = steam.get_app_details(game_id)
         if not data:
             return None
@@ -111,6 +185,7 @@ def update_game(game_id: int):
                 id=genre_dict["id"], name=genre_dict["description"]
             )
             if genre.id in genre_blacklist:
+                game.delete_instance()
                 return None
             if genre.id == 37:
                 game.free_to_play = True
@@ -122,7 +197,10 @@ def update_game(game_id: int):
         game.last_update_time = dt.datetime.now()
         # save
         game.save()
-    return True
+    if game:
+        return game
+    else:
+        return None
 
 
 def update_game_stats(game):
@@ -195,43 +273,6 @@ def get_normalized_playtimes(min_player_count, zscore):
     return result
 
 
-def update_cbr_for_game(min_player_count=-1):
-    parameters, _ = Parameters.get_or_create(name="cbr_for_game")
-    if not parameters.best:
-        parameters.best = {"min_player_count": 10}
-    if not parameters.last:
-        parameters.last = {}
-    if min_player_count == -1:
-        min_player_count = parameters.best["min_player_count"]
-    last_min_player_count = parameters.last.get("min_player_count")
-    system, _ = System.get_or_create(key="cbr_for_game")
-    if days_delta(system.date_time) > 30 or last_min_player_count != min_player_count:
-        print("update cbr for game")
-        Game.update({Game.cbr: None}).execute()
-        games = Game.select(Game.id, Game.features).where(
-            (Game.features != None)
-            & (Game.player_count > min_player_count)
-            & (Game.rating >= 7)
-        )
-        vectorizer = CountVectorizer()
-        X = vectorizer.fit_transform([g.features for g in games])
-        csr = cosine_similarity(X, X)
-        result = {}
-        for game_a, row in zip(games, csr):
-            game_a.cbr = dict(
-                sorted(
-                    [(game_b.id, value) for game_b, value in zip(games, row)],
-                    key=lambda x: x[1],
-                    reverse=True,
-                )
-            )
-        Game.bulk_update(games, [Game.cbr])
-        system.date_time = dt.datetime.now()
-        system.save()
-        parameters.last = {"min_player_count": min_player_count}
-        parameters.save()
-
-
 def get_game_vecs(min_player_count, min_game_count):
     normalized_playtimes = get_normalized_playtimes(min_player_count, False)
     games = list(normalized_playtimes.keys())
@@ -254,84 +295,6 @@ def get_game_vecs(min_player_count, min_game_count):
     return games, users, game_vecs
 
 
-def update_mbcf_for_games(min_player_count=-1, min_game_count=-1):
-    parameters, _ = Parameters.get_or_create(name="mbcf_for_game")
-    if not parameters.best:
-        parameters.best = {"min_player_count": 10, "min_game_count": 10}
-    if not parameters.last:
-        parameters.last = {}
-    if min_player_count == -1:
-        min_player_count = parameters.best["min_player_count"]
-    if min_game_count == -1:
-        min_game_count = parameters.best["min_game_count"]
-    last_min_player_count = parameters.last.get("min_player_count")
-    last_min_game_count = parameters.last.get("min_game_count")
-    system, _ = System.get_or_create(key="mbcf_for_game")
-    if (
-        days_delta(system.date_time) > 30
-        or last_min_player_count != min_player_count
-        or last_min_game_count != min_game_count
-    ):
-        print("update mbcf for game")
-        Game.update({Game.mbcf: None}).execute()
-        game_ids, _, game_vecs = get_game_vecs(min_player_count, min_game_count)
-        games = [Game.get_by_id(game_id) for game_id in game_ids]
-        game_vecs = np.corrcoef(game_vecs)
-        for game_a, row in zip(games, game_vecs):
-            game_a.mbcf = dict(
-                sorted(
-                    [(game_id_b, value) for game_id_b, value in zip(game_ids, row)],
-                    key=lambda x: x[1],
-                    reverse=True,
-                )
-            )
-        Game.bulk_update(games, [Game.mbcf])
-        system.date_time = dt.datetime.now()
-        system.save()
-        parameters.last = {
-            "min_player_count": min_player_count,
-            "min_game_count": min_game_count,
-        }
-        parameters.save()
-
-
-def update_hr_for_games(cbr_coef=-1, mbcf_coef=-1):
-    parameters, _ = Parameters.get_or_create(name="hr_for_game")
-    if not parameters.best:
-        parameters.best = {"cbr_coef": 0.75, "mbcf_coef": 0.25}
-    if not parameters.last:
-        parameters.last = {}
-    if cbr_coef == -1:
-        cbr_coef = parameters.best["cbr_coef"]
-    if mbcf_coef == -1:
-        mbcf_coef = parameters.best["mbcf_coef"]
-    last_cbr_coef = parameters.last.get("cbr_coef")
-    last_mbcf_coef = parameters.last.get("mbcf_coef")
-    system, _ = System.get_or_create(key="hr_for_game")
-    if (
-        days_delta(system.date_time) > 30
-        or last_cbr_coef != cbr_coef
-        or last_mbcf_coef != mbcf_coef
-    ):
-        print("update hr for game")
-        Game.update({Game.hr: None}).execute()
-        games = Game.select(Game.id, Game.cbr, Game.mbcf)
-        for game in games:
-            cbr_result = game.cbr
-            mbcf_result = game.mbcf
-            game.hr = merge_dicts(
-                [
-                    normalize_dict(cbr_result, cbr_coef) if cbr_result else [],
-                    normalize_dict(mbcf_result, mbcf_coef) if mbcf_result else [],
-                ]
-            )
-            if not game.hr:
-                game.hr = None
-        Game.bulk_update(games, [Game.hr])
-        system.date_time = dt.datetime.now()
-        system.save()
-        parameters.last = {
-            "cbr_coef": cbr_coef,
-            "mbcf_coef": mbcf_coef,
-        }
-        parameters.save()
+def get_readable_result_for_games(d: dict, size: int):
+    d = slice_dict(d, 1, size + 1)
+    return {Game.get_by_id(int(game_id)): value for game_id, value in d.items()}

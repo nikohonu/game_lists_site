@@ -41,9 +41,9 @@
             </div>
         </div>
         <div class="relations">
-            {% for ug in data['games'] %}
-            <a href="{{ url_for('game.game', game_id = ug.game.id, game_name = ug.game.name)}}">
-                <img src="{{ ug.game.image_url }}" width="179px" score={{ ug.score }} playtime={{ ug.playtime }} />
+            {% for g in data['games'] %}
+            <a href="{{ url_for('game.game', game_id = g.id, game_name = g.name)}}">
+                <img src="{{ g.image_url }}" width="179px" score={{ g.score }} playtime={{ g.playtime }} />
             </a>
             {% endfor %}
         </div>

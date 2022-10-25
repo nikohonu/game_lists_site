@@ -2,40 +2,27 @@ import numpy as np
 from flask import Blueprint, render_template, request
 from flask_peewee.utils import get_object_or_404
 
-from game_lists_site.models import GameDeveloper, GameGenre, GameTag, User, UserGame
-
-not_game_ids = [
-    202090,
-    205790,
-    214850,
-    217490,
-    225140,
-    226320,
-    239450,
-    250820,
-    285030,
-    310380,
-    323370,
-    36700,
-    388080,
-    404790,
-    41010,
-    431960,
-    607380,
-    623990,
-    700580,
-]
-free_game_ids = [440, 570, 950670, 450390]
+from game_lists_site.models import (
+    Developer,
+    GameDeveloper,
+    GameGenre,
+    GameTag,
+    Genre,
+    Tag,
+    User,
+    UserGame,
+)
 
 bp = Blueprint("user_stats", __name__, url_prefix="/user")
 
 
 @bp.route("/<username>/stats/overview", methods=["GET"])
 def overview(username: str):
-
     user = get_object_or_404(User, User.username == username)
     stats = {}
-    user_game = UserGame.select().where(UserGame.user == user)
+    user_game = UserGame.select(UserGame.playtime, UserGame.score, UserGame.game).where(
+        UserGame.user == user
+    )
     playtimes = np.array([ug.playtime for ug in user_game.where(UserGame.playtime > 0)])
     scores = np.array([ug.score for ug in user_game.where(UserGame.score > 0)])
     stats["total_games"] = len(list(user_game))
@@ -80,9 +67,7 @@ def overview(username: str):
         else:
             stats["release_years_mean"][year] = [ug.score]
     for year in stats["release_years_hours"]:
-        stats["release_years_hours"][year] = round(
-            stats["release_years_hours"][year]
-        )
+        stats["release_years_hours"][year] = round(stats["release_years_hours"][year])
     for year in stats["release_years_mean"]:
         stats["release_years_mean"][year] = (
             round(np.mean(stats["release_years_mean"][year]) * 10) / 10
@@ -110,7 +95,9 @@ developers_fix = {
 
 def get_features_stats(user, feature_type, exclude_without_score=False):
     user_game = (
-        UserGame.select().where(UserGame.user == user).where(UserGame.playtime > 0)
+        UserGame.select(UserGame.game, UserGame.score, UserGame.playtime)
+        .where(UserGame.user == user)
+        .where(UserGame.playtime > 0)
     )
     if exclude_without_score:
         user_game = user_game.where(UserGame.score > 0)
@@ -118,29 +105,30 @@ def get_features_stats(user, feature_type, exclude_without_score=False):
     for ug in user_game:
         match feature_type:
             case "genre":
-                game_feature = GameGenre.select().where(GameGenre.game == ug.game)
-            case "tag":
-                game_feature = GameTag.select().where(GameTag.game == ug.game)
-            case "developer":
-                game_feature = GameDeveloper.select().where(
-                    GameDeveloper.game == ug.game
+                game_feature = (
+                    Genre.select(Genre.name)
+                    .join(GameGenre)
+                    .where(GameGenre.game == ug.game)
                 )
-        for gg in game_feature:
-            match feature_type:
-                case "genre":
-                    feature_name: str = gg.genre.name  # this
-                case "tag":
-                    feature_name: str = gg.tag.name  # this
-                case "developer":
-                    feature_name: str = gg.developer.name  # this
+            case "tag":
+                game_feature = (
+                    Tag.select(Tag.name).join(GameTag).where(GameTag.game == ug.game)
+                )
+            case "developer":
+                game_feature = (
+                    Developer.select(Developer.name)
+                    .join(GameDeveloper)
+                    .where(GameDeveloper.game == ug.game)
+                )
+        for gf in game_feature:
             unified_feature_name = (
-                feature_name.replace(" ", "").replace(",", "").replace(".", "")
+                gf.name.replace(" ", "").replace(",", "").replace(".", "")
             )
             if feature_type == "developer" and unified_feature_name in developers_fix:
                 unified_feature_name = developers_fix[unified_feature_name]
             if unified_feature_name not in stats:
                 stats[unified_feature_name] = {}
-                stats[unified_feature_name]["name"] = feature_name
+                stats[unified_feature_name]["name"] = gf.name
                 stats[unified_feature_name]["games"] = {ug}
             else:
                 stats[unified_feature_name]["games"].add(ug)
@@ -176,7 +164,11 @@ def genres(username: str):
     stats = get_features_stats(user, "genre", exclude_without_score)
     exclude_without_score = str(exclude_without_score).lower()
     return render_template(
-        "user/stats/features.html", user=user, title="Genres", stats=stats, exclude_without_score=exclude_without_score
+        "user/stats/features.html",
+        user=user,
+        title="Genres",
+        stats=stats,
+        exclude_without_score=exclude_without_score,
     )
 
 
@@ -188,7 +180,11 @@ def tags(username: str):
     stats = get_features_stats(user, "tag", exclude_without_score)
     exclude_without_score = str(exclude_without_score).lower()
     return render_template(
-        "user/stats/features.html", user=user, title="Tags", stats=stats, exclude_without_score=exclude_without_score
+        "user/stats/features.html",
+        user=user,
+        title="Tags",
+        stats=stats,
+        exclude_without_score=exclude_without_score,
     )
 
 
@@ -200,5 +196,9 @@ def developers(username: str):
     stats = get_features_stats(user, "developer", exclude_without_score)
     exclude_without_score = str(exclude_without_score).lower()
     return render_template(
-        "user/stats/features.html", user=user, title="Developers", stats=stats, exclude_without_score=exclude_without_score
+        "user/stats/features.html",
+        user=user,
+        title="Developers",
+        stats=stats,
+        exclude_without_score=exclude_without_score,
     )

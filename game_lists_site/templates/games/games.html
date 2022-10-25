@@ -15,18 +15,18 @@
         <th>Player count</th>
         <th>Rating</th>
     </tr>
-    {% for gs in game_stats %}
+    {% for g in games %}
     <tr>
-        <td>{{ gs.game.id }}</td>
-        <td><img src="{{ gs.game.image_url }}" alt="" height="87"></td>
-        <td><a href="{{ url_for('game.game', game_id = gs.game.id, game_name = gs.game.name) }}">{{gs.game.name}}</td>
-        <td>{{ prettify_playtime(gs.mean_playtime)}}</td>
-        <td>{{ prettify_playtime(gs.median_playtime) }}</td>
-        <td>{{ prettify_playtime(gs.max_playtime) }}</td>
-        <td>{{ prettify_playtime(gs.min_playtime) }}</td>
-        <td>{{ prettify_playtime_with_days(gs.total_playtime) }}</td>
-        <td>{{ gs.player_count }}</td>
-        <td>{{ ((gs.rating*100)|int)/100 }}</td>
+        <td>{{ g.id }}</td>
+        <td><img src="{{ g.image_url }}" alt="" height="87"></td>
+        <td><a href="{{ url_for('game.game', game_id = g.id, game_name = g.name) }}">{{g.name}}</td>
+        <td>{{ prettify_playtime(g.mean_playtime)}}</td>
+        <td>{{ prettify_playtime(g.median_playtime) }}</td>
+        <td>{{ prettify_playtime(g.max_playtime) }}</td>
+        <td>{{ prettify_playtime(g.min_playtime) }}</td>
+        <td>{{ prettify_playtime_with_days(g.playtime) }}</td>
+        <td>{{ g.player_count }}</td>
+        <td>{{ ((g.score*100)|int)/100 }}</td>
     </tr>
     {% endfor %}
 </table>
