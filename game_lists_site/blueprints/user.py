@@ -3,21 +3,17 @@ import json
 
 from flask import Blueprint, jsonify, render_template, request
 from flask_peewee.utils import get_object_or_404
+from game_lists_site.algorithms.user import update_cbr_for_user
 
 import game_lists_site.utils.steam as steam
 from game_lists_site.models import Game, User, UserGame
-from game_lists_site.utilities import update_game, update_game_stats
-from game_lists_site.utils.utils import (
-    get_cbr_for_user,
-    get_hrs_for_user,
-    get_mbcf_for_user,
-    get_mobcf_for_user,
-)
 from game_lists_site.utilities import (
     days_delta,
+    get_readable_result_for_games,
+    update_game,
     update_game_score_stats,
+    update_game_stats,
 )
-
 
 bp = Blueprint("user", __name__, url_prefix="/user")
 
@@ -83,14 +79,15 @@ def games(username: str):
 @bp.route("/<username>/recommendations")
 def recommendations(username: str):
     user = get_object_or_404(User, User.username == username)
+    update_cbr_for_user(user)
     # hrs_result = get_hrs_for_user(user).keys()
-    # cbr_result = get_cbr_for_user(user).keys()
+    cbr_result = get_readable_result_for_games(user.cbr, 9)
     # mbcf_result = get_mbcf_for_user(user).keys()
     # mobcf_result = get_mobcf_for_user(user).keys()
     return render_template(
         "user/recommendations.html",
         user=user,
-        # cbr_result=cbr_result,
+        cbr_result=cbr_result,
         # mbcf_result=mbcf_result,
         # mobcf_result=mobcf_result,
         # hrs_result=hrs_result,

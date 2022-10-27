@@ -69,7 +69,7 @@ class ParametersManager:
         self.p, _ = Parameters.get_or_create(name=name)
         self.cp = current_parameters
         if not self.p.best:
-            self.best = best
+            self.p.best = best
         for key, value in self.p.best.items():
             if key not in self.cp:
                 self.cp[key] = value
@@ -108,6 +108,11 @@ def merge_dicts(dicts: list):
     }
     return result
 
+
+def normalize_dict(dict_data: dict, coef: float = 1):
+    values = list(dict_data.values())
+    values = preprocessing.normalize([values])[0] * coef
+    return {k: v for k, v in zip(dict_data, values)}
 
 def normalize_dict(dict_data: dict, coef: float = 1):
     values = list(dict_data.values())
@@ -247,12 +252,12 @@ def update_game_score_stats(game):
         (UserGame.game == game) & (UserGame.score > 0)
     )
     scores = np.array([ug.score for ug in users_game])
-    if len(scores) > 2:
+    if len(scores) > 1:
         game.score = np.mean(scores)
     game.save()
 
 
-def get_normalized_playtimes(min_player_count, zscore):
+def get_normalized_playtimes(min_player_count, zscore, user_first=False):
     games = [
         g for g in Game.select(Game.id).where(Game.player_count >= min_player_count)
     ]
@@ -270,6 +275,14 @@ def get_normalized_playtimes(min_player_count, zscore):
         result[game.id] = {
             ug.user.id: playtime for ug, playtime in zip(users_game, playtimes)
         }
+    if user_first:
+        user_first_result = {}
+        for game_id in result.keys():
+            for user_id in result[game_id].keys():
+                if user_id not in user_first_result:
+                    user_first_result[user_id] = {}
+                user_first_result[user_id][game_id] = result[game_id][user_id]
+        result = user_first_result
     return result
 
 
@@ -295,6 +308,7 @@ def get_game_vecs(min_player_count, min_game_count):
     return games, users, game_vecs
 
 
-def get_readable_result_for_games(d: dict, size: int):
-    d = slice_dict(d, 1, size + 1)
+def get_readable_result_for_games(d: dict, size: int = -1):
+    if size != -1:
+        d = slice_dict(d, 1, size + 1)
     return {Game.get_by_id(int(game_id)): value for game_id, value in d.items()}

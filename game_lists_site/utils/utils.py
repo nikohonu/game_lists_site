@@ -5,10 +5,10 @@ from operator import itemgetter
 import numpy as np
 import pandas as pd
 import scipy.stats as stats
-from sklearn import preprocessing
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from sklearn import preprocessing
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
