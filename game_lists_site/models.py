@@ -61,9 +61,13 @@ class User(BaseModel):
     last_games_update_time = DateTimeField(null=True)
     cbr_update_time = DateTimeField(null=True)
     mbcf_update_time = DateTimeField(null=True)
+    mobcf_update_time = DateTimeField(null=True)
+    hr_update_time = DateTimeField(null=True)
     cbr = JsonField(null=True)
     similar_users = JsonField(null=True)
     mbcf = JsonField(null=True)
+    mobcf = JsonField(null=True)
+    hr = JsonField(null=True)
 
 
 class Game(BaseModel):

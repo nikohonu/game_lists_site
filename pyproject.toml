@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "game-lists-site"
-version = "0.33.0"
+version = "0.34.0"
 description = "game lists site"
 authors = ["nikohonu <nikohonu@gmail.com>"]
 license = "MIT"
