@@ -1,9 +1,10 @@
-import json
+import json as jsonlib
 from math import isnan
 from pathlib import Path
 
 from appdirs import user_data_dir
 from peewee import (
+    SQL,
     AutoField,
     BigIntegerField,
     BooleanField,
@@ -17,7 +18,6 @@ from peewee import (
     Model,
     PostgresqlDatabase,
     TextField,
-    SQL,
 )
 
 
@@ -26,13 +26,13 @@ class JsonField(Field):
 
     def db_value(self, value):
         if value:
-            return json.dumps(value, allow_nan=False)
+            return jsonlib.dumps(value, allow_nan=False)
         else:
             return None
 
     def python_value(self, value):
         if value:
-            return json.loads(value)
+            return jsonlib.loads(value)
         else:
             return None
 
@@ -60,10 +60,10 @@ class User(BaseModel):
     last_update_time = DateTimeField(null=True)
     last_games_update_time = DateTimeField(null=True)
     cbr_update_time = DateTimeField(null=True)
+    mbcf_update_time = DateTimeField(null=True)
     cbr = JsonField(null=True)
-    last_benchmark_cbr_update_time = DateTimeField(null=True)
-    last_mbcf_update_time = DateTimeField(null=True)
-    last_benchmark_mbcf_update_time = DateTimeField(null=True)
+    similar_users = JsonField(null=True)
+    mbcf = JsonField(null=True)
 
 
 class Game(BaseModel):
@@ -143,6 +143,7 @@ class System(BaseModel):
     key = TextField(primary_key=True)
     date_time = DateTimeField(null=True)
     date_time_value = DateTimeField(null=True)
+    json = JsonField(null=True)
 
 
 class GameCBR(BaseModel):

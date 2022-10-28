@@ -15,6 +15,7 @@ from game_lists_site.models import (
     Parameters,
     Tag,
     UserGame,
+    System,
 )
 
 not_game_ids = [
@@ -64,6 +65,7 @@ not_game_ids = [
     700580,
 ]
 
+
 class ParametersManager:
     def __init__(self, name, current_parameters, best) -> None:
         self.p, _ = Parameters.get_or_create(name=name)
@@ -108,11 +110,6 @@ def merge_dicts(dicts: list):
     }
     return result
 
-
-def normalize_dict(dict_data: dict, coef: float = 1):
-    values = list(dict_data.values())
-    values = preprocessing.normalize([values])[0] * coef
-    return {k: v for k, v in zip(dict_data, values)}
 
 def normalize_dict(dict_data: dict, coef: float = 1):
     values = list(dict_data.values())
@@ -257,55 +254,71 @@ def update_game_score_stats(game):
     game.save()
 
 
-def get_normalized_playtimes(min_player_count, zscore, user_first=False):
-    games = [
-        g for g in Game.select(Game.id).where(Game.player_count >= min_player_count)
-    ]
-    users_games = UserGame.select(UserGame.playtime, UserGame.user).where(
-        UserGame.playtime > 0
+def get_normalized_playtimes(**current_parameters):
+    p = ParametersManager(
+        "normalized_playtimes",
+        current_parameters,
+        {"min_player_count": 10, "zscore": False, "user_first": False},
     )
-    result = {}
-    for game in games:
-        users_game = users_games.where(UserGame.game == game)
-        playtimes = [user_game.playtime for user_game in users_game]
-        if zscore:
-            playtimes = stats.zscore(playtimes)
-        else:
-            playtimes = preprocessing.normalize([playtimes])[0]
-        result[game.id] = {
-            ug.user.id: playtime for ug, playtime in zip(users_game, playtimes)
-        }
-    if user_first:
-        user_first_result = {}
-        for game_id in result.keys():
-            for user_id in result[game_id].keys():
-                if user_id not in user_first_result:
-                    user_first_result[user_id] = {}
-                user_first_result[user_id][game_id] = result[game_id][user_id]
-        result = user_first_result
-    return result
+    system, _ = System.get_or_create(key="normalized_playtimes")
+    if days_delta(system.date_time) > 1 or p.is_diff_last_current():
+        print("update normalized playtimes")
+        games = [
+            g
+            for g in Game.select(Game.id).where(
+                Game.player_count >= p["min_player_count"]
+            )
+        ]
+        users_games = UserGame.select(UserGame.playtime, UserGame.user).where(
+            UserGame.playtime > 0
+        )
+        result = {}
+        for game in games:
+            users_game = users_games.where(UserGame.game == game)
+            playtimes = [user_game.playtime for user_game in users_game]
+            if p["zscore"]:
+                playtimes = stats.zscore(playtimes)
+            else:
+                playtimes = preprocessing.normalize([playtimes])[0]
+            result[game.id] = {
+                ug.user.id: playtime for ug, playtime in zip(users_game, playtimes)
+            }
+        if p["user_first"]:
+            user_first_result = {}
+            for game_id in result.keys():
+                for user_id in result[game_id].keys():
+                    if user_id not in user_first_result:
+                        user_first_result[user_id] = {}
+                    user_first_result[user_id][game_id] = result[game_id][user_id]
+            result = user_first_result
+        system.json = result
+        system.date_time = dt.datetime.now()
+        system.save()
+    return system.json
 
 
 def get_game_vecs(min_player_count, min_game_count):
-    normalized_playtimes = get_normalized_playtimes(min_player_count, False)
-    games = list(normalized_playtimes.keys())
-    users = {}
+    normalized_playtimes = get_normalized_playtimes(min_player_count=min_player_count, zscore=False)
+    games_ids = list(normalized_playtimes.keys())
+    users_ids = {}
     for game in normalized_playtimes.keys():
         for u in normalized_playtimes[game].keys():
-            if u in users:
-                users[u] += 1
+            if u in users_ids:
+                users_ids[u] += 1
             else:
-                users[u] = 1
-    users = [u for u, game_count in users.items() if game_count >= min_game_count]
+                users_ids[u] = 1
+    users_ids = [
+        u for u, game_count in users_ids.items() if game_count >= min_game_count
+    ]
     game_vecs = []
-    for game in games:
+    for game in games_ids:
         game_vec = []
-        for u in users:
+        for u in users_ids:
             value = normalized_playtimes[game].get(u)
             game_vec.append(value if value else 0)
         game_vecs.append(game_vec)
     game_vecs = np.array(game_vecs, dtype=np.float32)
-    return games, users, game_vecs
+    return games_ids, users_ids, game_vecs
 
 
 def get_readable_result_for_games(d: dict, size: int = -1):
