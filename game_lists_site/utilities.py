@@ -125,7 +125,7 @@ def days_delta(date_time):
 
 def slice_dict(d, start, end):
     if d:
-        return dict(list(d.items())[start:end])
+        return dict(list(d.items())[int(start):int(end)])
     else:
         return {}
 
@@ -254,11 +254,11 @@ def update_game_score_stats(game):
     game.save()
 
 
-def get_normalized_playtimes(**current_parameters):
+def get_normalized_playtimes(user_first, **current_parameters):
     p = ParametersManager(
         "normalized_playtimes",
         current_parameters,
-        {"min_player_count": 10, "zscore": False, "user_first": False},
+        {"min_player_count": 10, "zscore": False},
     )
     system, _ = System.get_or_create(key="normalized_playtimes")
     if days_delta(system.date_time) > 1 or p.is_diff_last_current():
@@ -280,25 +280,27 @@ def get_normalized_playtimes(**current_parameters):
                 playtimes = stats.zscore(playtimes)
             else:
                 playtimes = preprocessing.normalize([playtimes])[0]
-            result[game.id] = {
-                ug.user.id: playtime for ug, playtime in zip(users_game, playtimes)
+            result[str(game.id)] = {
+                str(ug.user.id): playtime for ug, playtime in zip(users_game, playtimes)
             }
-        if p["user_first"]:
+        system.json = result
+        system.date_time = dt.datetime.now()
+        system.save()
+    result = system.json
+    if user_first:
             user_first_result = {}
             for game_id in result.keys():
                 for user_id in result[game_id].keys():
                     if user_id not in user_first_result:
                         user_first_result[user_id] = {}
                     user_first_result[user_id][game_id] = result[game_id][user_id]
-            result = user_first_result
-        system.json = result
-        system.date_time = dt.datetime.now()
-        system.save()
-    return system.json
+            return user_first_result
+    else:
+        return system.json
 
 
 def get_game_vecs(min_player_count, min_game_count):
-    normalized_playtimes = get_normalized_playtimes(min_player_count=min_player_count, zscore=False)
+    normalized_playtimes = get_normalized_playtimes(False, min_player_count=min_player_count, zscore=False)
     games_ids = list(normalized_playtimes.keys())
     users_ids = {}
     for game in normalized_playtimes.keys():
@@ -322,6 +324,8 @@ def get_game_vecs(min_player_count, min_game_count):
 
 
 def get_readable_result_for_games(d: dict, size: int = -1):
-    if size != -1:
-        d = slice_dict(d, 1, size + 1)
-    return {Game.get_by_id(int(game_id)): value for game_id, value in d.items()}
+    if d:
+        if size != -1:
+            d = slice_dict(d, 1, size + 1)
+        return {Game.get_by_id(int(game_id)): value for game_id, value in d.items()}
+    return {}
