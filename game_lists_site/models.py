@@ -67,6 +67,8 @@ class User(BaseModel):
     mobcf = JsonField(null=True)
     hr = JsonField(null=True)
 
+    normalization = JsonField(null=True)
+
 
 class Game(BaseModel):
     id = BigIntegerField(primary_key=True)
@@ -75,19 +77,24 @@ class Game(BaseModel):
     features = TextField(null=True)
     free_to_play = BooleanField(default=False)
     image_url = TextField(null=True)
+    rating = IntegerField(null=True)
+    release_date = DateField(null=True)
+
+    last_update_time = DateTimeField(null=True)
+
     max_playtime = IntegerField(default=0)
     mean_playtime = FloatField(default=0)
     median_playtime = FloatField(default=0)
     min_playtime = IntegerField(default=0)
     player_count = IntegerField(null=True)
     playtime = IntegerField(default=0)
-    rating = IntegerField(null=True)
-    release_date = DateField(null=True)
     score = FloatField(default=0)
+
     cbr = JsonField(null=True)
-    mbcf = JsonField(null=True)
     hr = JsonField(null=True)
-    last_update_time = DateTimeField(null=True)
+    mbcf = JsonField(null=True)
+
+    normalization = JsonField(null=True)
 
 
 class Developer(BaseModel):

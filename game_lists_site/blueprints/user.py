@@ -18,6 +18,7 @@ from game_lists_site.utilities import (
     update_game,
     update_game_score_stats,
     update_game_stats,
+    update_normalization,
 )
 
 bp = Blueprint("user", __name__, url_prefix="/user")
@@ -65,9 +66,12 @@ def games(username: str):
                 else dt.datetime.fromtimestamp(owned_game["rtime_last_played"])
             )
             user_game, _ = UserGame.get_or_create(user=user, game=game)
+            old_playtime = int(user_game.playtime)
             user_game.last_played = last_played
             user_game.playtime = owned_game["playtime_forever"]
             user_game.save()
+            # if old_playtime != user_game.playtime:
+            update_normalization(user, game)
         user.last_games_update_time = dt.datetime.now()
         user.save()
         games = Game.select().join(UserGame).where(UserGame.user == user)
