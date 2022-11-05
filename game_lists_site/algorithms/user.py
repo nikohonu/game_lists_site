@@ -193,7 +193,7 @@ def update_mbcf_for_user(user, **current_parameters):
                             list(normalized_playtimes[user_id].items()),
                             key=lambda x: x[1],
                             reverse=True,
-                        )[: p["max_game"]]
+                        )[: int(p["max_game"])]
                     }
                 )
         user.mbcf = {
